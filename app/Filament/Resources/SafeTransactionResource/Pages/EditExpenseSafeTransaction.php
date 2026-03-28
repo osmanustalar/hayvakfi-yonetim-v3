@@ -131,13 +131,22 @@ class EditExpenseSafeTransaction extends EditRecord
                         Forms\Components\Repeater::make('items')
                             ->label('Kalemler')
                             ->relationship('items')
+                            ->live(onBlur: true)
                             ->schema([
                                 Forms\Components\TextInput::make('amount')
                                     ->label('Tutar')
                                     ->required()
                                     ->mask(RawJs::make('$money($input, \',\')'))
                                     ->live(onBlur: true)
-                                    ->prefix(fn (Get $get): string => Safe::find($get('../../safe_id'))?->currency?->symbol ?? 'TRY'),
+                                    ->prefix(fn (Get $get): string => Safe::find($get('../../safe_id'))?->currency?->symbol ?? 'TRY')
+                                    ->afterStateUpdated(function (Get $get, Set $set): void {
+                                        $items = $get('../items') ?? [];
+                                        if (!is_array($items)) {
+                                            $items = $items?->toArray() ?? [];
+                                        }
+                                        $total = collect($items)->sum(fn ($i): float => (float) str_replace(['.', ','], ['', '.'], $i['amount'] ?? '0'));
+                                        $set('../../total_amount_display', number_format($total, 2, ',', '.'));
+                                    }),
 
                                 Forms\Components\Select::make('transaction_category_id')
                                     ->label('Kategori')
