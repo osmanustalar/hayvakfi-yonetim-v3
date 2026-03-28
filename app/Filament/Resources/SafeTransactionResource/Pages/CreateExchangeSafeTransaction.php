@@ -136,24 +136,30 @@ class CreateExchangeSafeTransaction extends CreateRecord
                                 Forms\Components\TextInput::make('target_amount')
                                     ->label('Giriş Tutarı (Hedef Para Birimi)')
                                     ->required()
-                                    ->mask(RawJs::make('$money($input, \',\')'))
+                                    ->step(0.01)
+                                    ->inputMode('decimal')
                                     ->prefix(fn (Get $get): string => Safe::find($get('target_safe_id'))?->currency?->symbol ?? '—')
+                                    ->formatStateUsing(fn (?float $state): string => $state !== null ? number_format($state, 2, ',', '') : '')
+                                    ->dehydrateStateUsing(fn (?string $state): ?float => $state !== null ? (float) str_replace(',', '.', $state) : null)
                                     ->live(onBlur: true)
                                     ->afterStateUpdated(function (Get $get, Set $set, ?string $state): void {
-                                        $sourceAmount = (float) str_replace(['.', ','], ['', '.'], $get('source_amount') ?? '0');
-                                        $targetAmount = (float) str_replace(['.', ','], ['', '.'], $state ?? '0');
+                                        $sourceAmount = (float) str_replace(',', '.', $get('source_amount') ?? '0');
+                                        $targetAmount = (float) str_replace(',', '.', $state ?? '0');
                                         self::recalculateRate($sourceAmount, $targetAmount, $set);
                                     }),
 
                                 Forms\Components\TextInput::make('source_amount')
                                     ->label('Çıkış Tutarı (Kaynak Para Birimi)')
                                     ->required()
-                                    ->mask(RawJs::make('$money($input, \',\')'))
+                                    ->step(0.01)
+                                    ->inputMode('decimal')
                                     ->prefix(fn (): string => Safe::find($this->safeId)?->currency?->symbol ?? 'TRY')
+                                    ->formatStateUsing(fn (?float $state): string => $state !== null ? number_format($state, 2, ',', '') : '')
+                                    ->dehydrateStateUsing(fn (?string $state): ?float => $state !== null ? (float) str_replace(',', '.', $state) : null)
                                     ->live(onBlur: true)
                                     ->afterStateUpdated(function (Get $get, Set $set, ?string $state): void {
-                                        $sourceAmount = (float) str_replace(['.', ','], ['', '.'], $state ?? '0');
-                                        $targetAmount = (float) str_replace(['.', ','], ['', '.'], $get('target_amount') ?? '0');
+                                        $sourceAmount = (float) str_replace(',', '.', $state ?? '0');
+                                        $targetAmount = (float) str_replace(',', '.', $get('target_amount') ?? '0');
                                         self::recalculateRate($sourceAmount, $targetAmount, $set);
                                     }),
                             ]),
@@ -224,8 +230,8 @@ class CreateExchangeSafeTransaction extends CreateRecord
             $this->halt();
         }
 
-        $sourceAmount = (float) str_replace(['.', ','], ['', '.'], $data['source_amount']);
-        $targetAmount = (float) str_replace(['.', ','], ['', '.'], $data['target_amount']);
+        $sourceAmount = (float) $data['source_amount'];
+        $targetAmount = (float) $data['target_amount'];
         $itemRate     = (float) ($data['item_rate'] ?? 0);
         $companyId    = (int) session('active_company_id');
         $createdById  = auth()->id();

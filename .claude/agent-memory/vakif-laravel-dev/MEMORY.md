@@ -1,0 +1,6 @@
+- [Filament 5.x locale fix](feedback_filament_locale.md) — `->locale()` removed from Panel builder in Filament 5.x; use app.locale config instead
+- [Filament 5.x Page Conventions](feedback_filament5_pages.md) — Schema not Form, app() not constructor DI, no fn() use syntax in pages
+- [FAZ 1 completed](project_faz1_complete.md) — Core infrastructure implemented; AdminPanelProvider had locale bug (now fixed)
+- [FAZ 2 completed](project_faz2_complete.md) — Contacts (global pool, no CompanyScope) fully implemented
+- [FAZ 3 completed](project_faz3_complete.md) — Kasa & Finans: SafeGroup/Safe/SafeTransaction/Items, 15 seeded categories, 4 Filament resources
+- [SafeTransaction type-based pages](project_safe_transaction_pages.md) — 4 Create + 4 Edit pages, Service update methods, SafeResource quick-action buttons

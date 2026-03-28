@@ -130,8 +130,11 @@ class CreateTransferSafeTransaction extends CreateRecord
                                 Forms\Components\TextInput::make('amount')
                                     ->label('Transfer Tutarı')
                                     ->required()
-                                    ->mask(RawJs::make('$money($input, \',\')'))
+                                    ->step(0.01)
+                                    ->inputMode('decimal')
                                     ->prefix(fn (): string => Safe::find($this->safeId)?->currency?->symbol ?? 'TRY')
+                                    ->formatStateUsing(fn (?float $state): string => $state !== null ? number_format($state, 2, ',', '') : '')
+                                    ->dehydrateStateUsing(fn (?string $state): ?float => $state !== null ? (float) str_replace(',', '.', $state) : null)
                                     ->live(onBlur: true),
                             ]),
                     ]),
@@ -199,7 +202,7 @@ class CreateTransferSafeTransaction extends CreateRecord
         $payload = [
             'source_safe_id'     => $this->safeId,
             'target_safe_id'     => $data['target_safe_id'],
-            'amount'             => (float) str_replace(['.', ','], ['', '.'], $data['amount']),
+            'amount'             => (float) $data['amount'],
             'process_date'       => $data['process_date'],
             'description'        => $data['description'] ?? null,
             'reference_user_id'  => $data['reference_user_id'] ?? null,

@@ -7,6 +7,7 @@ namespace App\Filament\Resources\SafeTransactionResource\Pages;
 use App\Enums\ContactType;
 use App\Enums\TransactionType;
 use App\Filament\Resources\SafeTransactionResource;
+use App\Helpers\Helper;
 use App\Models\Contact;
 use App\Models\Safe;
 use App\Models\SafeTransactionCategory;
@@ -107,14 +108,7 @@ class CreateExpenseSafeTransaction extends CreateRecord
                                             ->dehydrated(false)
                                             ->prefix(fn (Get $get): string => Safe::find($get('safe_id'))?->currency?->symbol ?? 'TRY')
                                             ->placeholder('0,00')
-                                            ->formatStateUsing(function (Get $get): string {
-                                                $items = $get('items') ?? [];
-                                                if (!is_array($items)) {
-                                                    $items = $items?->toArray() ?? [];
-                                                }
-                                                $total = collect($items)->sum(fn ($i): float => (float) str_replace(['.', ','], ['', '.'], $i['amount'] ?? '0'));
-                                                return number_format($total, 2, ',', '.');
-                                            }),
+                                            ->formatStateUsing(fn ($state) => Helper::formatShowMoney($state ?? 0)),
                                     ]),
                             ]),
                     ]),
@@ -125,63 +119,73 @@ class CreateExpenseSafeTransaction extends CreateRecord
                     ->schema([
                         Forms\Components\Repeater::make('items')
                             ->label('Kalemler')
-                            ->live(onBlur: true)
                             ->schema([
-                                Forms\Components\TextInput::make('amount')
-                                    ->label('Tutar')
-                                    ->required()
-                                    ->mask(RawJs::make('$money($input, \',\')'))
-                                    ->live(onBlur: true)
-                                    ->prefix(fn (Get $get): string => Safe::find($get('../../safe_id'))?->currency?->symbol ?? 'TRY')
-                                    ->afterStateUpdated(function (Get $get, Set $set): void {
-                                        $items = $get('../../items') ?? [];
-                                        if (!is_array($items)) {
-                                            $items = $items?->toArray() ?? [];
-                                        }
-                                        $total = collect($items)->sum(fn ($i): float => (float) str_replace(['.', ','], ['', '.'], $i['amount'] ?? '0'));
-                                        $set('../../total_amount_display', number_format($total, 2, ',', '.'));
-                                    }),
+                                Schemas\Components\Grid::make(2)
+                                    ->schema([
+                                        Forms\Components\TextInput::make('amount')
+                                            ->required()
+                                            ->label('Tutar')
+                                            ->mask(RawJs::make(<<<'JS'
+                                            $money($input, ',')
+                                            JS))
+                                            ->live(onBlur: true)
+                                            ->prefix(fn (Get $get): string => Safe::find($get('../../safe_id'))?->currency?->symbol ?? 'TRY')
+                                            ->placeholder('0,00')
+                                            ->dehydrateStateUsing(fn (?string $state): ?float => $state !== null ? (float) str_replace(',', '.', $state) : null)
+                                            ->afterStateUpdated(function ($state, Get $get, Set $set): void {
+                                                $items = $get('../../items') ?? [];
+                                                $total = 0;
 
-                                Forms\Components\Select::make('transaction_category_id')
-                                    ->label('Kategori')
-                                    ->required()
-                                    ->options(function (): array {
-                                        return self::buildCategoryOptions('expense');
-                                    })
-                                    ->live(onBlur: true)
-                                    ->afterStateUpdated(function (?int $state, Set $set): void {
-                                        if ($state === null) {
-                                            $this->activeContactType = null;
+                                                foreach ($items as $item) {
+                                                    if (isset($item['amount'])) {
+                                                        $total += Helper::formatSaveMoney($item['amount']);
+                                                    }
+                                                }
 
-                                            return;
-                                        }
+                                                $formattedTotal = Helper::formatShowMoney($total);
+                                                $set('../../total_amount_display', $formattedTotal);
+                                            }),
 
-                                        $category = SafeTransactionCategory::find($state);
+                                        Forms\Components\Select::make('transaction_category_id')
+                                            ->label('Kategori')
+                                            ->required()
+                                            ->options(function (): array {
+                                                return self::buildCategoryOptions('expense');
+                                            })
+                                            ->live(onBlur: true)
+                                            ->afterStateUpdated(function (?int $state, Set $set): void {
+                                                if ($state === null) {
+                                                    $this->activeContactType = null;
 
-                                        if ($category === null) {
-                                            return;
-                                        }
+                                                    return;
+                                                }
 
-                                        if ($category->children()->exists()) {
-                                            $set('transaction_category_id', null);
-                                            Notification::make()
-                                                ->danger()
-                                                ->title('Kategori Seçimi Engellendi')
-                                                ->body('Alt kategorisi olan ana kategori seçilemez. Lütfen bir alt kategori seçin.')
-                                                ->send();
+                                                $category = SafeTransactionCategory::find($state);
 
-                                            return;
-                                        }
+                                                if ($category === null) {
+                                                    return;
+                                                }
 
-                                        $this->activeContactType = $category->contact_type;
-                                    })
-                                    ->searchable()
-                                    ->prefixIcon('heroicon-o-tag'),
+                                                if ($category->children()->exists()) {
+                                                    $set('transaction_category_id', null);
+                                                    Notification::make()
+                                                        ->danger()
+                                                        ->title('Kategori Seçimi Engellendi')
+                                                        ->body('Alt kategorisi olan ana kategori seçilemez. Lütfen bir alt kategori seçin.')
+                                                        ->send();
+
+                                                    return;
+                                                }
+
+                                                $this->activeContactType = $category->contact_type;
+                                            })
+                                            ->searchable()
+                                            ->prefixIcon('heroicon-o-tag'),
+                                    ]),
                             ])
                             ->addActionLabel('Kalem Ekle')
                             ->deletable(true)
                             ->reorderable(false)
-                            ->columns(2)
                             ->minItems(1)
                             ->required(),
                     ]),
@@ -246,14 +250,16 @@ class CreateExpenseSafeTransaction extends CreateRecord
 
     protected function handleRecordCreation(array $data): Model
     {
-        $items = $data['items'] ?? [];
-        $total = collect($items)->sum(fn ($i): float => (float) str_replace(['.', ','], ['', '.'], $i['amount'] ?? '0'));
+        $items = collect($data['items'] ?? [])->map(fn (array $item): array => [
+            'transaction_category_id' => (int) $item['transaction_category_id'],
+            'amount'                  => (float) ($item['amount'] ?? 0),
+        ])->toArray();
+        $total = collect($items)->sum(fn ($i): float => $i['amount']);
 
         $payload = [
             'safe_id'            => $this->safeId,
             'type'               => TransactionType::EXPENSE->value,
             'total_amount'       => $total,
-            'amount'             => $total,
             'process_date'       => $data['process_date'],
             'description'        => $data['description'] ?? null,
             'reference_user_id'  => $data['reference_user_id'] ?? null,
