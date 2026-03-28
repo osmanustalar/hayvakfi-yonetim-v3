@@ -125,22 +125,18 @@ class SafeResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('safeGroup.name')
-                    ->label('Grup')
-                    ->sortable(),
-
                 TextColumn::make('name')
                     ->label('Kasa Adı')
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('currency.symbol')
-                    ->label('Döviz'),
-
                 TextColumn::make('balance')
                     ->label('Bakiye')
                     ->numeric(decimalPlaces: 2)
                     ->sortable(),
+
+                TextColumn::make('currency.symbol')
+                    ->label('Döviz'),
 
                 IconColumn::make('is_active')
                     ->label('Aktif')
@@ -216,7 +212,7 @@ class SafeResource extends Resource
                         ->label('Hareketler')
                         ->icon('heroicon-o-list-bullet')
                         ->color('gray')
-                        ->url(fn (Safe $record): string => SafeTransactionResource::getUrl('index')),
+                        ->url(fn (Safe $record): string => SafeTransactionResource::getUrl('index') . '?safe_id=' . $record->id),
 
                     ViewAction::make()->label('Görüntüle'),
                     EditAction::make()->label('Düzenle'),

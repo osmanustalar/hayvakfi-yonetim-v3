@@ -24,11 +24,11 @@ class EditExchangeSafeTransaction extends EditRecord
 {
     protected static string $resource = SafeTransactionResource::class;
 
-    public Safe $sourceSafe;
+    public ?Safe $sourceSafe = null;
 
-    public Safe $targetSafe;
+    public ?Safe $targetSafe = null;
 
-    public SafeTransaction $targetTransaction;
+    public ?SafeTransaction $targetTransaction = null;
 
     protected function authorizeAccess(): void
     {
@@ -76,8 +76,13 @@ class EditExchangeSafeTransaction extends EditRecord
 
     protected function mutateFormDataBeforeFill(array $data): array
     {
-        $data['source_amount'] = $this->record->total_amount;
-        $data['target_amount'] = $this->targetTransaction->total_amount;
+        $targetTransaction = SafeTransaction::withoutGlobalScopes()->find($this->record->target_transaction_id);
+
+        $data['source_safe_display'] = $this->record->safe_id;
+        $data['target_safe_display'] = $this->record->target_safe_id;
+        $data['source_amount'] = (float) $this->record->total_amount;
+        $data['target_amount'] = $targetTransaction ? (float) $targetTransaction->total_amount : 0;
+        $data['item_rate'] = (float) ($this->record->item_rate ?? 0);
 
         return $data;
     }
@@ -95,47 +100,47 @@ class EditExchangeSafeTransaction extends EditRecord
                                 // Hedef kasa gösterimi (readonly)
                                 Forms\Components\Select::make('target_safe_display')
                                     ->label('Giriş Yapılan Kasa (Hedef)')
-                                    ->options([$this->targetSafe->id => $this->targetSafe->name . ' (' . ($this->targetSafe->currency?->symbol ?? '') . ')'])
-                                    ->default($this->targetSafe->id)
+                                    ->options(fn () => $this->targetSafe ? [$this->targetSafe->id => $this->targetSafe->name . ' (' . ($this->targetSafe->currency?->symbol ?? '') . ')'] : [])
+                                    ->default(fn () => $this->targetSafe?->id)
                                     ->disabled()
-                                    ->dehydrated(false)
                                     ->prefixIcon('heroicon-o-building-library')
-                                    ->helperText('Mevcut Bakiye: ' . number_format((float) $this->targetSafe->balance, 2, ',', '.') . ' ' . ($this->targetSafe->currency?->symbol ?? 'TRY')),
+                                    ->helperText(fn () => $this->targetSafe ? 'Mevcut Bakiye: ' . number_format((float) $this->targetSafe->balance, 2, ',', '.') . ' ' . ($this->targetSafe->currency?->symbol ?? 'TRY') : ''),
 
                                 // Kaynak kasa gösterimi (readonly)
                                 Forms\Components\Select::make('source_safe_display')
                                     ->label('Çıkış Yapılan Kasa (Kaynak)')
-                                    ->options([$this->sourceSafe->id => $this->sourceSafe->name . ' (' . ($this->sourceSafe->currency?->symbol ?? '') . ')'])
-                                    ->default($this->sourceSafe->id)
+                                    ->options(fn () => $this->sourceSafe ? [$this->sourceSafe->id => $this->sourceSafe->name . ' (' . ($this->sourceSafe->currency?->symbol ?? '') . ')'] : [])
+                                    ->default(fn () => $this->sourceSafe?->id)
                                     ->disabled()
-                                    ->dehydrated(false)
                                     ->prefixIcon('heroicon-o-building-library')
-                                    ->helperText('Mevcut Bakiye: ' . number_format((float) $this->sourceSafe->balance, 2, ',', '.') . ' ' . ($this->sourceSafe->currency?->symbol ?? 'TRY')),
+                                    ->helperText(fn () => $this->sourceSafe ? 'Mevcut Bakiye: ' . number_format((float) $this->sourceSafe->balance, 2, ',', '.') . ' ' . ($this->sourceSafe->currency?->symbol ?? 'TRY') : ''),
                             ]),
 
                         Schemas\Components\Grid::make(2)
                             ->schema([
                                 Forms\Components\TextInput::make('target_amount')
-                                    ->label('Giriş Tutarı (' . ($this->targetSafe->currency?->symbol ?? '—') . ')')
+                                    ->label(fn () => 'Giriş Tutarı (' . ($this->targetSafe?->currency?->symbol ?? '—') . ')')
                                     ->required()
-                                    ->mask(RawJs::make('$money($input, \',\')'))
-                                    ->prefix($this->targetSafe->currency?->symbol ?? '—')
+                                    ->step(0.01)
+                                    ->inputMode('decimal')
+                                    ->prefix(fn () => $this->targetSafe?->currency?->symbol ?? '—')
                                     ->live(onBlur: true)
                                     ->afterStateUpdated(function (Get $get, Set $set, ?string $state): void {
-                                        $sourceAmount = (float) str_replace(['.', ','], ['', '.'], $get('source_amount') ?? '0');
-                                        $targetAmount = (float) str_replace(['.', ','], ['', '.'], $state ?? '0');
+                                        $sourceAmount = (float) ($get('source_amount') ?? '0');
+                                        $targetAmount = (float) ($state ?? '0');
                                         self::recalculateRate($sourceAmount, $targetAmount, $set);
                                     }),
 
                                 Forms\Components\TextInput::make('source_amount')
-                                    ->label('Çıkış Tutarı (' . ($this->sourceSafe->currency?->symbol ?? 'TRY') . ')')
+                                    ->label(fn () => 'Çıkış Tutarı (' . ($this->sourceSafe?->currency?->symbol ?? 'TRY') . ')')
                                     ->required()
-                                    ->mask(RawJs::make('$money($input, \',\')'))
-                                    ->prefix($this->sourceSafe->currency?->symbol ?? 'TRY')
+                                    ->step(0.01)
+                                    ->inputMode('decimal')
+                                    ->prefix(fn () => $this->sourceSafe?->currency?->symbol ?? 'TRY')
                                     ->live(onBlur: true)
                                     ->afterStateUpdated(function (Get $get, Set $set, ?string $state): void {
-                                        $sourceAmount = (float) str_replace(['.', ','], ['', '.'], $state ?? '0');
-                                        $targetAmount = (float) str_replace(['.', ','], ['', '.'], $get('target_amount') ?? '0');
+                                        $sourceAmount = (float) ($state ?? '0');
+                                        $targetAmount = (float) ($get('target_amount') ?? '0');
                                         self::recalculateRate($sourceAmount, $targetAmount, $set);
                                     }),
                             ]),
@@ -191,8 +196,8 @@ class EditExchangeSafeTransaction extends EditRecord
         $transaction = $record;
 
         $payload = [
-            'source_amount'      => (float) str_replace(['.', ','], ['', '.'], $data['source_amount']),
-            'target_amount'      => (float) str_replace(['.', ','], ['', '.'], $data['target_amount']),
+            'source_amount'      => (float) $data['source_amount'],
+            'target_amount'      => (float) $data['target_amount'],
             'item_rate'          => (float) ($data['item_rate'] ?? 0),
             'process_date'       => $data['process_date'],
             'description'        => $data['description'] ?? null,

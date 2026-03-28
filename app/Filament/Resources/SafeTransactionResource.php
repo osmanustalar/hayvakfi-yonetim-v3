@@ -9,6 +9,7 @@ use App\Enums\TransactionType;
 use App\Filament\Resources\SafeTransactionResource\Pages;
 use App\Models\Currency;
 use App\Models\Safe;
+use App\Models\SafeGroup;
 use App\Models\SafeTransaction;
 use App\Models\User;
 use Filament\Actions\BulkActionGroup;
@@ -176,6 +177,17 @@ class SafeTransactionResource extends Resource
                     ->options(fn (): array => Safe::query()->pluck('name', 'id')->toArray())
                     ->searchable(),
 
+                SelectFilter::make('safe_group_id')
+                    ->label('Kasa Grubu')
+                    ->options(fn (): array => SafeGroup::query()->pluck('name', 'id')->toArray())
+                    ->query(fn (Builder $query, array $data): Builder =>
+                        $query->when(
+                            $data['value'] ?? null,
+                            fn (Builder $q): Builder => $q->whereHas('safe', fn (Builder $subQ) => $subQ->where('safe_group_id', $data['value']))
+                        )
+                    )
+                    ->searchable(),
+
                 SelectFilter::make('currency_id')
                     ->label('Para Birimi')
                     ->options(fn (): array => Currency::query()->pluck('name', 'id')->toArray())
@@ -189,8 +201,8 @@ class SafeTransactionResource extends Resource
                 SelectFilter::make('type')
                     ->label('İşlem Türü')
                     ->options([
-                        'income'  => 'Gelir',
-                        'expense' => 'Gider',
+                        'income'  => 'Giriş',
+                        'expense' => 'Çıkış',
                     ]),
 
                 SelectFilter::make('operation_type')
@@ -235,11 +247,6 @@ class SafeTransactionResource extends Resource
                         return $indicators;
                     }),
 
-                TernaryFilter::make('is_show')
-                    ->label('Raporda Göster')
-                    ->placeholder('Tümü')
-                    ->trueLabel('Gösteriliyor')
-                    ->falseLabel('Gizli'),
             ])
             ->filtersFormColumns(2)
             ->actions([
