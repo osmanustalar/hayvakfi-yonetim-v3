@@ -111,9 +111,12 @@ class EditTransferSafeTransaction extends EditRecord
                                 Forms\Components\TextInput::make('amount')
                                     ->label('Transfer Tutarı')
                                     ->required()
-                                    ->numeric()
+                                    ->step(0.01)
+                                    ->inputMode('decimal')
                                     ->minValue(0.01)
                                     ->prefix(fn () => $this->sourceSafe?->currency?->symbol ?? 'TRY')
+                                    ->formatStateUsing(fn (?float $state): string => $state !== null ? number_format($state, 2, ',', '') : '')
+                                    ->dehydrateStateUsing(fn (?string $state): ?float => $state !== null ? (float) str_replace(',', '.', $state) : null)
                                     ->live(onBlur: true),
                             ]),
                     ]),
