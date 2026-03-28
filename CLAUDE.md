@@ -192,14 +192,12 @@ safes
   iban                (nullable — banka hesabı için),
   currency_id         (FK: currencies),
   balance             (decimal 15,4 — lockForUpdate ile güncellenir),
-  is_manual_transaction (bool):
-    -- TRUE  → panelden manuel kayıt GİRİLEMEZ, yalnızca API besler
-    -- FALSE → kullanıcı panelden kayıt girebilir
   is_active, sort_order,
   last_processed_at   (nullable datetime — son API çekme),
   integration_id      (nullable — harici sistem ID),
   created_user_id (FK: users),
   timestamps, soft_delete
+  -- NOTE: safe_group.is_api_integration = true ise, bu kasaya manuel işlem girilemez
 ```
 
 ### 7.4 İşlem Kategorileri
@@ -248,11 +246,10 @@ safe_transactions
   operation_type    (ENUM: exchange / transfer — nullable, normal işlemde null),
 
   -- Tutar alanları
-  total_amount      (decimal 15,4) — kasanın kendi para biriminde kesinleşmiş tutar
-  amount            (decimal 15,4) — orijinal giriş tutarı (farklı para biriminde olabilir)
+  total_amount      (decimal 15,4) — kasanın kendi para biriminde kesinleşmiş tutar (items toplamı)
   currency_id       (FK: currencies — nullable) — işlemin para birimi
   exchange_rate     (decimal 10,4 — nullable) — 1 yabancı = X kasa para birimi
-                    -- total_amount = amount × exchange_rate (servis hesaplar, formdan alınmaz)
+                    -- Döviz işleminde: total_amount = base_amount × exchange_rate (servis hesaplar)
   item_rate         (decimal 10,4 — nullable) — birim fiyat (kurban: 3 adet × 5000 = 15000)
 
   -- Transfer / döviz eşi (ayrı tablo YOK, transaction üzerinde tutulur)
@@ -341,10 +338,9 @@ aid_records
 - `balance_after_created` işlem anında snapshot alınır, bir daha değişmez.
 
 ### Manuel İşlem Kontrolü
-```
-SafeTransactionService::create()     → is_manual_transaction = TRUE ise HATA FIRLATIR
-SafeTransactionService::createFromApi() → bu kontrolü bypass eder
-```
+- `safe_group.is_api_integration = true` ise, panelden manuel işlem girilemez.
+- `SafeTransactionService::create()` — manual giriş kontrolü: `safeGroup->is_api_integration = true` ise exception
+- `SafeTransactionService::createFromApi()` — API işlemleri bu kontrolü bypass eder
 
 ### Split İşlem Kuralı
 - `SUM(safe_transaction_items.amount)` = `safe_transactions.total_amount` zorunludur.
