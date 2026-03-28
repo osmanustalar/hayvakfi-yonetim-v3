@@ -48,9 +48,30 @@ class SafeTransactionResource extends Resource
         return (string) static::getModel()::count();
     }
 
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['safe.name', 'description'];
+    }
+
+    public static function getGlobalSearchResultsTitle(int $count): string
+    {
+        return "İşlem Araması ({$count})";
+    }
+
+    public static function getGlobalSearchEloquentQuery(): Builder
+    {
+        return parent::getGlobalSearchEloquentQuery()
+            ->with('safe')
+            ->where(function (Builder $query): Builder {
+                return $query->where('description', 'like', '%' . request('q') . '%')
+                    ->orWhereHas('safe', fn (Builder $q): Builder => $q->where('name', 'like', '%' . request('q') . '%'));
+            });
+    }
+
     public static function getTableQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        return parent::getTableQuery()->with('items.category', 'safe', 'currency', 'referenceUser');
+        return parent::getTableQuery()
+            ->with(['items' => fn ($q) => $q->with('category')], 'safe.currency', 'currency', 'referenceUser');
     }
 
     public static function table(Table $table): Table
@@ -67,16 +88,17 @@ class SafeTransactionResource extends Resource
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('items.category.name')
+                TextColumn::make('safe.id')
                     ->label('Kategori')
                     ->formatStateUsing(function (SafeTransaction $record): string {
-                        if ($record->items->isEmpty()) {
-                            return '—';
+                        $categories = [];
+                        foreach ($record->items as $item) {
+                            if ($item->category?->name && !in_array($item->category->name, $categories)) {
+                                $categories[] = $item->category->name;
+                            }
                         }
 
-                        return $record->items
-                            ->map(fn ($item) => $item->category?->name ?? '—')
-                            ->implode(', ');
+                        return !empty($categories) ? implode(', ', $categories) : '—';
                     }),
 
                 TextColumn::make('type')
@@ -93,26 +115,15 @@ class SafeTransactionResource extends Resource
                         ? $state->label()
                         : (string) $state),
 
-                TextColumn::make('operation_type')
-                    ->label('Tip')
-                    ->badge()
-                    ->color(fn ($state): string => match (true) {
-                        $state instanceof OperationType && $state === OperationType::TRANSFER => 'info',
-                        $state instanceof OperationType && $state === OperationType::EXCHANGE => 'warning',
-                        default => 'gray',
-                    })
-                    ->formatStateUsing(fn ($state): string => $state instanceof OperationType
-                        ? $state->label()
-                        : ($state !== null ? (string) $state : '—')),
-
                 TextColumn::make('total_amount')
                     ->label('Tutar')
                     ->numeric(decimalPlaces: 2)
                     ->sortable(),
 
-                TextColumn::make('currency.symbol')
+                TextColumn::make('safe.currency.symbol')
                     ->label('Para Birimi')
-                    ->alignCenter(),
+                    ->alignCenter()
+                    ->placeholder('—'),
 
                 TextColumn::make('referenceUser.name')
                     ->label('İşlemi Yapan')
@@ -137,6 +148,7 @@ class SafeTransactionResource extends Resource
             ->defaultPaginationPageOption(20)
             ->defaultSort('process_date', 'desc')
             ->filters([
+                // Tarih Filtreleri
                 Filter::make('process_date')
                     ->label('İşlem Tarihi')
                     ->form([
@@ -172,46 +184,6 @@ class SafeTransactionResource extends Resource
                         return $indicators;
                     }),
 
-                SelectFilter::make('safe_id')
-                    ->label('Kasa')
-                    ->options(fn (): array => Safe::query()->pluck('name', 'id')->toArray())
-                    ->searchable(),
-
-                SelectFilter::make('safe_group_id')
-                    ->label('Kasa Grubu')
-                    ->options(fn (): array => SafeGroup::query()->pluck('name', 'id')->toArray())
-                    ->query(fn (Builder $query, array $data): Builder =>
-                        $query->when(
-                            $data['value'] ?? null,
-                            fn (Builder $q): Builder => $q->whereHas('safe', fn (Builder $subQ) => $subQ->where('safe_group_id', $data['value']))
-                        )
-                    )
-                    ->searchable(),
-
-                SelectFilter::make('currency_id')
-                    ->label('Para Birimi')
-                    ->options(fn (): array => Currency::query()->pluck('name', 'id')->toArray())
-                    ->searchable(),
-
-                SelectFilter::make('reference_user_id')
-                    ->label('İşlemi Yapan')
-                    ->options(fn (): array => User::query()->pluck('name', 'id')->toArray())
-                    ->searchable(),
-
-                SelectFilter::make('type')
-                    ->label('İşlem Türü')
-                    ->options([
-                        'income'  => 'Giriş',
-                        'expense' => 'Çıkış',
-                    ]),
-
-                SelectFilter::make('operation_type')
-                    ->label('Operasyon Tipi')
-                    ->options([
-                        'exchange' => 'Döviz İşlemi',
-                        'transfer' => 'Hesaplar Arası Transfer',
-                    ]),
-
                 Filter::make('amount_range')
                     ->label('Tutar Aralığı')
                     ->form([
@@ -246,6 +218,48 @@ class SafeTransactionResource extends Resource
 
                         return $indicators;
                     }),
+
+                // Kasa Filtreleri
+                SelectFilter::make('safe_id')
+                    ->label('Kasa')
+                    ->options(fn (): array => Safe::query()->pluck('name', 'id')->toArray())
+                    ->searchable(),
+
+                SelectFilter::make('safe_group_id')
+                    ->label('Kasa Grubu')
+                    ->options(fn (): array => SafeGroup::query()->pluck('name', 'id')->toArray())
+                    ->query(fn (Builder $query, array $data): Builder =>
+                        $query->when(
+                            $data['value'] ?? null,
+                            fn (Builder $q): Builder => $q->whereHas('safe', fn (Builder $subQ) => $subQ->where('safe_group_id', $data['value']))
+                        )
+                    )
+                    ->searchable(),
+
+                // Diğer Filtreleri
+                SelectFilter::make('currency_id')
+                    ->label('Para Birimi')
+                    ->options(fn (): array => Currency::query()->pluck('name', 'id')->toArray())
+                    ->searchable(),
+
+                SelectFilter::make('reference_user_id')
+                    ->label('İşlemi Yapan')
+                    ->options(fn (): array => User::query()->pluck('name', 'id')->toArray())
+                    ->searchable(),
+
+                SelectFilter::make('type')
+                    ->label('İşlem Türü')
+                    ->options([
+                        'income'  => 'Giriş',
+                        'expense' => 'Çıkış',
+                    ]),
+
+                SelectFilter::make('operation_type')
+                    ->label('Operasyon Tipi')
+                    ->options([
+                        'exchange' => 'Döviz İşlemi',
+                        'transfer' => 'Hesaplar Arası Transfer',
+                    ]),
 
             ])
             ->filtersFormColumns(2)

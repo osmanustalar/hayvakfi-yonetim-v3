@@ -6,6 +6,7 @@ namespace App\Filament\Resources\SafeTransactionResource\Pages;
 
 use App\Filament\Resources\SafeTransactionResource;
 use Filament\Resources\Pages\ListRecords;
+use Illuminate\Database\Eloquent\Builder;
 
 class ListSafeTransactions extends ListRecords
 {
@@ -21,6 +22,21 @@ class ListSafeTransactions extends ListRecords
                 'value' => request('safe_id'),
             ];
         }
+    }
+
+    protected function getTableQuery(): Builder
+    {
+        $query = parent::getTableQuery();
+
+        // Arama kutusu için safe.name ve description alanlarında arama yap
+        if ($search = $this->getTableSearch()) {
+            $query->where(function (Builder $q) use ($search): Builder {
+                return $q->where('description', 'like', "%{$search}%")
+                    ->orWhereHas('safe', fn (Builder $subQ): Builder => $subQ->where('name', 'like', "%{$search}%"));
+            });
+        }
+
+        return $query;
     }
 
     protected function getHeaderActions(): array

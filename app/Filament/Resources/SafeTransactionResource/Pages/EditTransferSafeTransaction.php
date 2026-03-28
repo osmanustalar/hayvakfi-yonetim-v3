@@ -22,9 +22,9 @@ class EditTransferSafeTransaction extends EditRecord
 {
     protected static string $resource = SafeTransactionResource::class;
 
-    public Safe $sourceSafe;
+    public ?Safe $sourceSafe = null;
 
-    public Safe $targetSafe;
+    public ?Safe $targetSafe = null;
 
     protected function authorizeAccess(): void
     {
@@ -72,8 +72,9 @@ class EditTransferSafeTransaction extends EditRecord
 
     protected function mutateFormDataBeforeFill(array $data): array
     {
-        $data['source_amount'] = $this->record->total_amount;
-        $data['target_amount'] = $this->record->total_amount;
+        $data['source_safe_display'] = $this->record->safe_id;
+        $data['target_safe_display'] = $this->record->target_safe_id;
+        $data['amount'] = (float) $this->record->total_amount;
 
         return $data;
     }
@@ -90,46 +91,30 @@ class EditTransferSafeTransaction extends EditRecord
                             ->schema([
                                 Forms\Components\Select::make('target_safe_display')
                                     ->label('Giriş Yapılan Kasa (Hedef)')
-                                    ->options([$this->targetSafe->id => $this->targetSafe->name . ' (' . ($this->targetSafe->currency?->symbol ?? '') . ')'])
-                                    ->default($this->targetSafe->id)
+                                    ->options(fn () => $this->targetSafe ? [$this->targetSafe->id => $this->targetSafe->name . ' (' . ($this->targetSafe->currency?->symbol ?? '') . ')'] : [])
+                                    ->default(fn () => $this->targetSafe?->id)
                                     ->disabled()
-                                    ->dehydrated(false)
                                     ->prefixIcon('heroicon-o-building-library')
-                                    ->helperText('Mevcut Bakiye: ' . number_format((float) $this->targetSafe->balance, 2, ',', '.') . ' ' . ($this->targetSafe->currency?->symbol ?? 'TRY')),
+                                    ->helperText(fn () => $this->targetSafe ? 'Mevcut Bakiye: ' . number_format((float) $this->targetSafe->balance, 2, ',', '.') . ' ' . ($this->targetSafe->currency?->symbol ?? 'TRY') : ''),
 
                                 Forms\Components\Select::make('source_safe_display')
                                     ->label('Çıkış Yapılan Kasa (Kaynak)')
-                                    ->options([$this->sourceSafe->id => $this->sourceSafe->name . ' (' . ($this->sourceSafe->currency?->symbol ?? '') . ')'])
-                                    ->default($this->sourceSafe->id)
+                                    ->options(fn () => $this->sourceSafe ? [$this->sourceSafe->id => $this->sourceSafe->name . ' (' . ($this->sourceSafe->currency?->symbol ?? '') . ')'] : [])
+                                    ->default(fn () => $this->sourceSafe?->id)
                                     ->disabled()
-                                    ->dehydrated(false)
                                     ->prefixIcon('heroicon-o-building-library')
-                                    ->helperText('Mevcut Bakiye: ' . number_format((float) $this->sourceSafe->balance, 2, ',', '.') . ' ' . ($this->sourceSafe->currency?->symbol ?? 'TRY')),
+                                    ->helperText(fn () => $this->sourceSafe ? 'Mevcut Bakiye: ' . number_format((float) $this->sourceSafe->balance, 2, ',', '.') . ' ' . ($this->sourceSafe->currency?->symbol ?? 'TRY') : ''),
                             ]),
 
-                        Schemas\Components\Grid::make(2)
+                        Schemas\Components\Grid::make(1)
                             ->schema([
-                                Forms\Components\TextInput::make('source_amount')
+                                Forms\Components\TextInput::make('amount')
                                     ->label('Transfer Tutarı')
                                     ->required()
                                     ->numeric()
                                     ->minValue(0.01)
-                                    ->prefix($this->sourceSafe->currency?->symbol ?? 'TRY')
-                                    ->live(onBlur: true)
-                                    ->afterStateUpdated(function (Set $set, ?string $state): void {
-                                        $set('target_amount', $state);
-                                    }),
-
-                                Forms\Components\TextInput::make('target_amount')
-                                    ->label('Transfer Tutarı (Hedef)')
-                                    ->required()
-                                    ->numeric()
-                                    ->minValue(0.01)
-                                    ->prefix($this->targetSafe->currency?->symbol ?? 'TRY')
-                                    ->live(onBlur: true)
-                                    ->afterStateUpdated(function (Set $set, ?string $state): void {
-                                        $set('source_amount', $state);
-                                    }),
+                                    ->prefix(fn () => $this->sourceSafe?->currency?->symbol ?? 'TRY')
+                                    ->live(onBlur: true),
                             ]),
                     ]),
 
@@ -170,7 +155,7 @@ class EditTransferSafeTransaction extends EditRecord
         $transaction = $record;
 
         $payload = [
-            'amount'             => (float) $data['source_amount'],
+            'amount'             => (float) $data['amount'],
             'process_date'       => $data['process_date'],
             'description'        => $data['description'] ?? null,
             'reference_user_id'  => $data['reference_user_id'] ?? null,
