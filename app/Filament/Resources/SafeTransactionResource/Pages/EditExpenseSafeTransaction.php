@@ -140,7 +140,7 @@ class EditExpenseSafeTransaction extends EditRecord
                                     ->live(onBlur: true)
                                     ->prefix(fn (Get $get): string => Safe::find($get('../../safe_id'))?->currency?->symbol ?? 'TRY')
                                     ->afterStateUpdated(function (Get $get, Set $set): void {
-                                        $items = $get('../items') ?? [];
+                                        $items = $get('../../items') ?? [];
                                         if (!is_array($items)) {
                                             $items = $items?->toArray() ?? [];
                                         }
