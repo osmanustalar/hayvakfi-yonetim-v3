@@ -47,7 +47,6 @@ class SafeTransaction extends Model
             'type'                  => TransactionType::class,
             'operation_type'        => OperationType::class,
             'total_amount'          => 'decimal:4',
-            'amount'                => 'decimal:4',
             'exchange_rate'         => 'decimal:4',
             'item_rate'             => 'decimal:4',
             'balance_after_created' => 'decimal:4',

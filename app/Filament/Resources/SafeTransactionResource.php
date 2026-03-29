@@ -88,6 +88,11 @@ class SafeTransactionResource extends Resource
                     ->searchable()
                     ->sortable(),
 
+                TextColumn::make('description')
+                    ->label('Açıklama')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
                 TextColumn::make('safe.id')
                     ->label('Kategori')
                     ->formatStateUsing(function (SafeTransaction $record): string {

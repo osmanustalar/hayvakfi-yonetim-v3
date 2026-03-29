@@ -15,7 +15,10 @@ class Currency extends Model
 
     protected $fillable = ['name', 'symbol', 'is_active'];
 
-    protected $casts = [
-        'is_active' => 'boolean',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'is_active' => 'boolean',
+        ];
+    }
 }

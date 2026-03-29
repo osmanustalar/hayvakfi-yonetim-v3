@@ -25,11 +25,4 @@ class SafeTransactionItemRepository extends BaseRepository
             ]);
         }
     }
-
-    public function sumByTransaction(int $transactionId): float
-    {
-        return (float) $this->model->newQuery()
-            ->where('transaction_id', $transactionId)
-            ->sum('amount');
-    }
 }

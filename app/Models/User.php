@@ -14,7 +14,6 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use App\Traits\LogsActivity;
 use Spatie\Permission\Traits\HasRoles;
-use App\Models\Safe;
 
 class User extends Authenticatable implements FilamentUser
 {

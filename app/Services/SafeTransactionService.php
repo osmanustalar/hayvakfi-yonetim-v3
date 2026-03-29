@@ -247,9 +247,7 @@ class SafeTransactionService
     {
         return DB::transaction(function () use ($transaction, $data): SafeTransaction {
             $safe    = $this->safeRepository->findWithLock($transaction->safe_id);
-            $oldType = $transaction->type instanceof TransactionType
-                ? $transaction->type->value
-                : (string) $transaction->type;
+            $oldType = $transaction->type->value;
             $oldAmount  = (float) $transaction->total_amount;
             $newAmount  = (float) $data['total_amount'];
             $newType    = (string) $data['type'];

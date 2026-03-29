@@ -21,11 +21,4 @@ class SafeGroupRepository extends BaseRepository
             ->orderBy('name')
             ->get();
     }
-
-    public function withSafes(): Collection
-    {
-        return $this->model->newQuery()
-            ->with('safes')
-            ->get();
-    }
 }

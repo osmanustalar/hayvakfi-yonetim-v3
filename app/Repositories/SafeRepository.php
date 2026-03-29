@@ -29,11 +29,4 @@ class SafeRepository extends BaseRepository
             ->lockForUpdate()
             ->findOrFail($id);
     }
-
-    public function findByGroup(int $safeGroupId): Collection
-    {
-        return $this->model->newQuery()
-            ->where('safe_group_id', $safeGroupId)
-            ->get();
-    }
 }

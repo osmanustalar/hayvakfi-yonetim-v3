@@ -37,16 +37,4 @@ class SafeTransactionCategoryRepository extends BaseRepository
             ->orderBy('sort_order')
             ->get();
     }
-
-    public function roots(): Collection
-    {
-        return $this->model->newQuery()
-            ->where(function ($q): void {
-                $q->whereNull('company_id')
-                  ->orWhere('company_id', session('active_company_id'));
-            })
-            ->whereNull('parent_id')
-            ->orderBy('sort_order')
-            ->get();
-    }
 }
