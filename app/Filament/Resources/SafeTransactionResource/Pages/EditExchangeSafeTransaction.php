@@ -161,12 +161,13 @@ class EditExchangeSafeTransaction extends EditRecord
                                 Forms\Components\DatePicker::make('process_date')
                                     ->label('İşlem Tarihi')
                                     ->required()
+                                    ->disabled(fn (): bool => $this->record->integration_id !== null)
+                                    ->helperText(fn (): ?string => $this->record->integration_id !== null ? 'API işlemlerinin tarihi değiştirilemez' : null)
                                     ->prefixIcon('heroicon-o-calendar')
                                     ->closeOnDateSelection(),
 
                                 Forms\Components\Select::make('reference_user_id')
                                     ->label('İşlemi Yapan Kullanıcı')
-                                    ->required()
                                     ->options(function (): array {
                                         return \App\Models\User::query()
                                             ->whereHas('companies', fn ($q) => $q->where('company_id', session('active_company_id')))
@@ -195,11 +196,29 @@ class EditExchangeSafeTransaction extends EditRecord
         /** @var SafeTransaction $transaction */
         $transaction = $record;
 
+        // API kayıtlarında tutar değiştirilemesin
+        if ($transaction->integration_id !== null) {
+            $originalAmount = (float) $transaction->total_amount;
+            $newAmount = (float) $data['source_amount'];
+            if (abs($newAmount - $originalAmount) > 0.001) {
+                throw new \RuntimeException(
+                    "API\'den geri verilen işlemlerde tutarlar değiştirilemez. " .
+                    "Orijinal tutar: " . number_format($originalAmount, 2, ',', '.') .
+                    ", Yeni tutar: " . number_format($newAmount, 2, ',', '.')
+                );
+            }
+        }
+
+        // API kayıtlarında işlem tarihini değiştirme
+        if ($transaction->integration_id !== null && (string) $data['process_date'] !== (string) $transaction->process_date) {
+            throw new \RuntimeException('API\'den geri verilen işlemlerin tarihi değiştirilemez.');
+        }
+
         $payload = [
             'source_amount'      => (float) $data['source_amount'],
             'target_amount'      => (float) $data['target_amount'],
             'item_rate'          => (float) ($data['item_rate'] ?? 0),
-            'process_date'       => $data['process_date'],
+            'process_date'       => $transaction->integration_id !== null ? $transaction->process_date : $data['process_date'],
             'description'        => $data['description'] ?? null,
             'reference_user_id'  => $data['reference_user_id'] ?? null,
         ];

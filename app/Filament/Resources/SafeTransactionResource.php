@@ -71,7 +71,9 @@ class SafeTransactionResource extends Resource
     public static function getTableQuery(): \Illuminate\Database\Eloquent\Builder
     {
         return parent::getTableQuery()
-            ->with(['items' => fn ($q) => $q->with('category')], 'safe.currency', 'currency', 'referenceUser');
+            ->with([
+                'items' => fn ($q) => $q->with(['category' => fn ($q) => $q->with('parent')])
+            ], 'safe.currency', 'currency', 'referenceUser');
     }
 
     public static function table(Table $table): Table
@@ -98,8 +100,16 @@ class SafeTransactionResource extends Resource
                     ->formatStateUsing(function (SafeTransaction $record): string {
                         $categories = [];
                         foreach ($record->items as $item) {
-                            if ($item->category?->name && !in_array($item->category->name, $categories)) {
-                                $categories[] = $item->category->name;
+                            if ($item->category) {
+                                $categoryLabel = $item->category->name;
+                                // Eğer alt kategoriyse, üst kategorisini de ekle
+                                if ($item->category->parent_id && $item->category->parent) {
+                                    $categoryLabel = $item->category->parent->name . ' > ' . $categoryLabel;
+                                }
+
+                                if (!in_array($categoryLabel, $categories)) {
+                                    $categories[] = $categoryLabel;
+                                }
                             }
                         }
 
