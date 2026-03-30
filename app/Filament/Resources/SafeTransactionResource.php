@@ -326,6 +326,11 @@ class SafeTransactionResource extends Resource
 
                 DeleteAction::make()
                     ->label('Sil')
+                    ->visible(fn (SafeTransaction $record): bool => $record->integration_id === null)
+                    ->tooltip(fn (SafeTransaction $record): ?string => $record->integration_id !== null
+                        ? 'API\'den geri verilen işlemler silinemez'
+                        : null
+                    )
                     ->before(function (SafeTransaction $record): void {
                         // İlişkili transfer/exchange kaydını da sil ve bakiyeleri düzelt
                         $type = $record->type instanceof TransactionType
@@ -366,7 +371,9 @@ class SafeTransactionResource extends Resource
             ])
             ->bulkActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make()->label('Seçilenleri Sil'),
+                    DeleteBulkAction::make()
+                        ->label('Seçilenleri Sil')
+                        ->deselectRecordsAfterCompletion(),
                 ]),
             ]);
     }

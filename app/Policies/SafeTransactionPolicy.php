@@ -34,6 +34,11 @@ class SafeTransactionPolicy
 
     public function delete(AuthUser $authUser, SafeTransaction $safeTransaction): bool
     {
+        // API'den geri verilen işlemler silinemez (integration_id !== null)
+        if ($safeTransaction->integration_id !== null) {
+            return false;
+        }
+
         return $authUser->can('delete_safe_transaction');
     }
 
@@ -49,6 +54,11 @@ class SafeTransactionPolicy
 
     public function forceDelete(AuthUser $authUser, SafeTransaction $safeTransaction): bool
     {
+        // API'den geri verilen işlemler silinemez (integration_id !== null)
+        if ($safeTransaction->integration_id !== null) {
+            return false;
+        }
+
         return $authUser->can('force_delete_safe_transaction');
     }
 
