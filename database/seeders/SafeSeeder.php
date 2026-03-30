@@ -26,11 +26,11 @@ class SafeSeeder extends Seeder
             throw new \RuntimeException('User not found. Run UserSeeder first.');
         }
 
-        $tryId = Currency::where('name', 'TRY')->first()?->id;
+        $tlId = Currency::where('name', 'TL')->first()?->id;
         $usdId = Currency::where('name', 'USD')->first()?->id;
         $eurId = Currency::where('name', 'EUR')->first()?->id;
 
-        if (!$tryId || !$usdId || !$eurId) {
+        if (!$tlId || !$usdId || !$eurId) {
             throw new \RuntimeException('Currencies not found. Run CurrencySeeder first.');
         }
 
@@ -96,7 +96,7 @@ class SafeSeeder extends Seeder
             [
                 'name'                 => 'Ana Kasa TL',
                 'safe_group_name'      => 'Vakıf',
-                'currency_id'          => $tryId,
+                'currency_id'          => $tlId,
                 'sort_order'           => 0,
             ],
             [
@@ -115,7 +115,7 @@ class SafeSeeder extends Seeder
             [
                 'name'                 => 'Üst Kasa TL',
                 'safe_group_name'      => 'Vakıf Üst',
-                'currency_id'          => $tryId,
+                'currency_id'          => $tlId,
                 'sort_order'           => 3,
             ],
             [
@@ -141,7 +141,7 @@ class SafeSeeder extends Seeder
             [
                 'name'                 => 'Ziraat TL',
                 'safe_group_name'      => 'Ziraat',
-                'currency_id'          => $tryId,
+                'currency_id'          => $tlId,
                 'sort_order'           => 99,
             ],
             [
@@ -160,13 +160,13 @@ class SafeSeeder extends Seeder
             [
                 'name'                 => 'Kuveyt Türk Bağış TL',
                 'safe_group_name'      => 'Kuveyt Türk',
-                'currency_id'          => $tryId,
+                'currency_id'          => $tlId,
                 'sort_order'           => 6,
             ],
             [
                 'name'                 => 'Kuveyt Türk Zekat TL',
                 'safe_group_name'      => 'Kuveyt Türk',
-                'currency_id'          => $tryId,
+                'currency_id'          => $tlId,
                 'sort_order'           => 9,
             ],
             [
@@ -184,19 +184,19 @@ class SafeSeeder extends Seeder
             [
                 'name'                 => 'Kuveyt Türk Katılım Bağış TL',
                 'safe_group_name'      => 'Kuveyt Türk',
-                'currency_id'          => $tryId,
+                'currency_id'          => $tlId,
                 'sort_order'           => 20,
             ],
             [
                 'name'                 => 'Kuveyt Türk Katılım Zekat TL',
                 'safe_group_name'      => 'Kuveyt Türk',
-                'currency_id'          => $tryId,
+                'currency_id'          => $tlId,
                 'sort_order'           => 22,
             ],
             [
                 'name'                 => 'Kuveyt Türk Hanımlar Kolu TL',
                 'safe_group_name'      => 'Kuveyt Türk',
-                'currency_id'          => $tryId,
+                'currency_id'          => $tlId,
                 'sort_order'           => 23,
             ],
         ];

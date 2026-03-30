@@ -12,7 +12,7 @@ class CurrencySeeder extends Seeder
     public function run(): void
     {
         $currencies = [
-            ['name' => 'TRY', 'symbol' => '₺', 'is_active' => true],
+            ['name' => 'TL', 'symbol' => '₺', 'is_active' => true],
             ['name' => 'USD', 'symbol' => '$', 'is_active' => true],
             ['name' => 'EUR', 'symbol' => '€', 'is_active' => true],
         ];

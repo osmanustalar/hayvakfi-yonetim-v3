@@ -415,6 +415,142 @@ class SafeTransactionService
         });
     }
 
+    /**
+     * "ATAMA BEKLİYOR" (category_id=3) kaydını transfer/döviz olarak ata.
+     *
+     * Senaryo 4'e bölünür — operation_choice + target_safe.is_api_integration kombinasyonu:
+     * - Transfer + API kasa: linking (tutar AYNI zorunlu)
+     * - Transfer + Normal: INCOME/EXPENSE oluştur (tersi yön)
+     * - Döviz + API kasa: liste (tutar farklı olabilir)
+     * - Döviz + Normal: manuel kur+tutar
+     *
+     * @param SafeTransaction $source Kaynak işlem (INCOME veya EXPENSE olabilir)
+     * @param array{
+     *   operation_choice: string,
+     *   target_safe_id: int,
+     *   target_transaction_id?: int|null,
+     *   exchange_rate?: float|null,
+     *   target_amount?: float|null,
+     * } $data
+     */
+    public function assignTransaction(SafeTransaction $source, array $data): void
+    {
+        DB::transaction(function () use ($source, $data): void {
+            $companyId     = (int) session('active_company_id');
+            $operationType = $data['operation_choice'];
+            $targetSafeId  = (int) $data['target_safe_id'];
+            $targetSafe    = Safe::with('safeGroup')->findOrFail($targetSafeId);
+            $isTargetApi   = $targetSafe->safeGroup->is_api_integration;
+            $categoryId    = $operationType === 'transfer' ? 1 : 2;
+            $opEnum        = $operationType === 'transfer'
+                ? OperationType::TRANSFER
+                : OperationType::EXCHANGE;
+
+            // ========== SENARYO A: Hedef API kasası → mevcut kaydı link et ==========
+            if ($isTargetApi) {
+                $targetTransactionId = $data['target_transaction_id'] ?? null;
+                if ($targetTransactionId === null) {
+                    throw new \Exception('Hedef kasa API entegrasyonlu, target_transaction_id gereklidir.');
+                }
+
+                /** @var SafeTransaction|null */
+                $target = SafeTransaction::withoutGlobalScopes()
+                    ->findOrFail($targetTransactionId);
+
+                // Kaynak kaydı güncelle
+                $source->update([
+                    'operation_type'        => $opEnum,
+                    'target_safe_id'        => $targetSafe->id,
+                    'target_transaction_id' => $target->id,
+                ]);
+
+                // Hedef kaydı güncelle
+                $target->update([
+                    'operation_type'        => $opEnum,
+                    'target_safe_id'        => $source->safe_id,
+                    'target_transaction_id' => $source->id,
+                ]);
+
+                // Her ikisinin items kategorisini güncelle
+                $source->items()->update(['transaction_category_id' => $categoryId]);
+                $target->items()->update(['transaction_category_id' => $categoryId]);
+
+                return;
+            }
+
+            // ========== SENARYO B: Hedef normal kasa → yeni kayıt oluştur ==========
+            // Type tersini belirle (EXPENSE → INCOME, INCOME → EXPENSE)
+            $targetType = $source->type === TransactionType::EXPENSE
+                ? TransactionType::INCOME
+                : TransactionType::EXPENSE;
+
+            $sourceAmount = (float) $source->total_amount;
+            $targetAmount = $sourceAmount;  // Transfer: aynı
+            $exchangeRate = null;
+            $itemRate     = null;
+
+            // Döviz işlemi ise exchange_rate/target_amount zorunlu
+            if ($operationType === 'exchange') {
+                if (!isset($data['exchange_rate'], $data['target_amount'])) {
+                    throw new \Exception('Döviz işleminde exchange_rate ve target_amount gereklidir.');
+                }
+
+                $exchangeRate = (float) $data['exchange_rate'];
+                $targetAmount = (float) $data['target_amount'];  // Form'dan manual giriş
+                $itemRate     = $exchangeRate;
+            }
+
+            // Hedef safe bakiye lock + güncelleme
+            $targetSafeLocked = $this->safeRepository->findWithLock($targetSafeId);
+
+            if ($targetType === TransactionType::INCOME) {
+                $targetSafeLocked->increment('balance', $targetAmount);
+            } else {
+                // EXPENSE — bakiye kontrolü
+                $this->safeService->checkBalance($targetSafeLocked, $targetAmount);
+                $targetSafeLocked->decrement('balance', $targetAmount);
+            }
+
+            // Yeni hedef transaction oluştur
+            /** @var SafeTransaction */
+            $target = $this->repository->create([
+                'company_id'            => $companyId,
+                'safe_id'               => $targetSafe->id,
+                'type'                  => $targetType,
+                'operation_type'        => $opEnum,
+                'total_amount'          => $targetAmount,
+                'currency_id'           => $operationType === 'exchange' ? $targetSafe->currency_id : $source->currency_id,
+                'exchange_rate'         => $exchangeRate,
+                'item_rate'             => $itemRate,
+                'target_safe_id'        => $source->safe_id,
+                'target_transaction_id' => $source->id,
+                'process_date'          => $source->process_date,
+                'transaction_date'      => $source->transaction_date,
+                'description'           => $source->description,
+                'reference_user_id'     => $source->reference_user_id,
+                'created_user_id'       => auth()->id(),
+                'balance_after_created' => $targetSafeLocked->fresh()->balance,
+            ]);
+
+            // Kaynak kaydı güncelle (linking + exchange fields)
+            $source->update([
+                'operation_type'        => $opEnum,
+                'target_safe_id'        => $targetSafe->id,
+                'target_transaction_id' => $target->id,
+                'exchange_rate'         => $exchangeRate,
+                'item_rate'             => $itemRate,
+            ]);
+
+            // Kaynak items kategorisini güncelle
+            $source->items()->update(['transaction_category_id' => $categoryId]);
+
+            // Hedef items oluştur
+            $this->itemRepository->createMany($target->id, $companyId, [
+                ['transaction_category_id' => $categoryId, 'amount' => $targetAmount],
+            ]);
+        });
+    }
+
     public function delete(SafeTransaction $transaction): bool
     {
         return $this->repository->delete($transaction->id);
@@ -455,6 +591,7 @@ class SafeTransactionService
 
             $transactionData = array_merge($data, [
                 'company_id'            => $companyId,
+                'currency_id'           => $data['currency_id'] ?? $safe->currency_id,
                 'created_user_id'       => auth()->id(),
                 'balance_after_created' => 0,
             ]);

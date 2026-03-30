@@ -269,6 +269,17 @@ class SafeTransactionResource extends Resource
             ])
             ->filtersFormColumns(2)
             ->actions([
+                Action::make('assign')
+                    ->label('Ata')
+                    ->icon('heroicon-o-link')
+                    ->color('warning')
+                    ->visible(function (SafeTransaction $record): bool {
+                        // Sadece kategori ID=3 ve target_transaction_id=null
+                        return $record->items()->where('transaction_category_id', 3)->exists()
+                            && $record->target_transaction_id === null;
+                    })
+                    ->url(fn (SafeTransaction $record): string => static::getUrl('assign', ['record' => $record->id])),
+
                 Action::make('edit')
                     ->label('Düzenle')
                     ->icon('heroicon-o-pencil')
@@ -363,7 +374,7 @@ class SafeTransactionResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'         => Pages\ListSafeTransactions::route('/'),
+            'index'           => Pages\ListSafeTransactions::route('/'),
             'create-income'   => Pages\CreateIncomeSafeTransaction::route('/create/income/{safe_id}'),
             'create-expense'  => Pages\CreateExpenseSafeTransaction::route('/create/expense/{safe_id}'),
             'create-exchange' => Pages\CreateExchangeSafeTransaction::route('/create/exchange/{safe_id}'),
@@ -372,6 +383,7 @@ class SafeTransactionResource extends Resource
             'edit-expense'    => Pages\EditExpenseSafeTransaction::route('/{record}/edit/expense'),
             'edit-exchange'   => Pages\EditExchangeSafeTransaction::route('/{record}/edit/exchange'),
             'edit-transfer'   => Pages\EditTransferSafeTransaction::route('/{record}/edit/transfer'),
+            'assign'          => Pages\AssignSafeTransaction::route('/{record}/assign'),
         ];
     }
 }

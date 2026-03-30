@@ -52,7 +52,14 @@ class SafeResource extends Resource
 
     public static function getTableQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        return parent::getTableQuery()->with('safeGroup');
+        $query = parent::getTableQuery()->with('safeGroup');
+
+        // super_admin tüm kasaları görebilir, diğerleri sadece kendilerine atanmış kasaları
+        if (! auth()->user()?->hasRole('super_admin')) {
+            $query->whereHas('users', fn ($q) => $q->where('users.id', auth()->id()));
+        }
+
+        return $query;
     }
 
     public static function form(Schema $form): Schema

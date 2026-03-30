@@ -205,7 +205,6 @@ class CreateExpenseSafeTransaction extends CreateRecord
 
                                 Forms\Components\Select::make('reference_user_id')
                                     ->label('İşlemi Yapan Kullanıcı')
-                                    ->required()
                                     ->options(function (): array {
                                         return \App\Models\User::query()
                                             ->whereHas('companies', fn ($q) => $q->where('company_id', session('active_company_id')))
@@ -230,7 +229,6 @@ class CreateExpenseSafeTransaction extends CreateRecord
                             ->schema([
                                 Forms\Components\Select::make('contact_id')
                                     ->label(fn (): string => $this->activeContactType?->label() ?? 'İlgili Kişi')
-                                    ->required(fn (): bool => $this->activeContactType !== null)
                                     ->options(function (): array {
                                         if ($this->activeContactType === null) {
                                             return [];

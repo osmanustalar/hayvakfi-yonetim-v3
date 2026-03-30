@@ -77,6 +77,7 @@ class CreateTransferSafeTransaction extends CreateRecord
                                                     ->where('is_active', true)
                                                     ->where('id', '!=', $sourceSafe->id)
                                                     ->where('currency_id', $sourceSafe->currency_id)
+                                                    ->whereHas('safeGroup', fn($q) => $q->where('is_api_integration', false))
                                                     ->get()
                                                     ->mapWithKeys(fn (Safe $s): array => [
                                                         $s->id => $s->name . ' (' . ($s->currency?->symbol ?? '') . ')',

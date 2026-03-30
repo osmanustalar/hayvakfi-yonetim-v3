@@ -84,40 +84,36 @@ class SafeTransactionCategorySeeder extends Seeder
             ]
         );
 
-        // ID 5 — Bağış - Kurban (üst kategori)
+        // ID 5 — Bağış (üst kategori)
         SafeTransactionCategory::updateOrCreate(
             ['id' => 5],
             [
                 'company_id'           => null,
-                'name'                 => 'Bağış - Kurban',
+                'name'                 => 'Bağış',
                 'type'                 => 'income',
                 'parent_id'            => null,
                 'sort_order'           => 10,
                 'is_active'            => true,
                 'is_disable_in_report' => false,
-                'contact_type'         => 'donor',
+                'contact_type'         => null,
                 'color'                => null,
                 'description'          => null,
                 'created_user_id'      => null,
             ]
         );
 
-        // Alt kategoriler (parent_id: 5)
-        $subcategories = [
-            6  => 'Genel Bağış',
-            7  => 'Zekat Bağışı',
-            8  => 'Akika Kurbanı',
-            9  => 'Vacip Kurbanı',
-            10 => 'Adak Kurbanı',
-            11 => 'Sadaka Kurbanı',
-            12 => 'Fitre',
-            13 => 'Kumanya',
-            14 => 'Öğrenci İftarı',
-            15 => 'Hatim',
+        // Bağış alt kategorileri (ID 6-11, parent_id: 5)
+        $donationSubcategories = [
+            6  => 'Genel',
+            7  => 'Zekat',
+            8  => 'Fitre',
+            9  => 'Kumanya',
+            10 => 'Öğrenci İftarı',
+            11 => 'Hatim',
         ];
 
         $sortOrder = 0;
-        foreach ($subcategories as $id => $name) {
+        foreach ($donationSubcategories as $id => $name) {
             $sortOrder += 10;
             SafeTransactionCategory::updateOrCreate(
                 ['id' => $id],
@@ -126,6 +122,53 @@ class SafeTransactionCategorySeeder extends Seeder
                     'name'                 => $name,
                     'type'                 => 'income',
                     'parent_id'            => 5,
+                    'sort_order'           => $sortOrder,
+                    'is_active'            => true,
+                    'is_disable_in_report' => false,
+                    'contact_type'         => 'donor',
+                    'color'                => null,
+                    'description'          => null,
+                    'created_user_id'      => null,
+                ]
+            );
+        }
+
+        // ID 12 — Kurban (üst kategori)
+        SafeTransactionCategory::updateOrCreate(
+            ['id' => 12],
+            [
+                'company_id'           => null,
+                'name'                 => 'Kurban',
+                'type'                 => 'income',
+                'parent_id'            => null,
+                'sort_order'           => 20,
+                'is_active'            => true,
+                'is_disable_in_report' => false,
+                'contact_type'         => null,
+                'color'                => null,
+                'description'          => null,
+                'created_user_id'      => null,
+            ]
+        );
+
+        // Kurban alt kategorileri (ID 13-16, parent_id: 12)
+        $sacrificeSubcategories = [
+            13 => 'Vacip Kurban',
+            14 => 'Akika Kurbanı',
+            15 => 'Sadaka Kurbanı',
+            16 => 'Adak Kurbanı',
+        ];
+
+        $sortOrder = 0;
+        foreach ($sacrificeSubcategories as $id => $name) {
+            $sortOrder += 10;
+            SafeTransactionCategory::updateOrCreate(
+                ['id' => $id],
+                [
+                    'company_id'           => null,
+                    'name'                 => $name,
+                    'type'                 => 'income',
+                    'parent_id'            => 12,
                     'sort_order'           => $sortOrder,
                     'is_active'            => true,
                     'is_disable_in_report' => false,

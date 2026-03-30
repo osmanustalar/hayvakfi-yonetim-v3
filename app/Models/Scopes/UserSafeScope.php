@@ -18,7 +18,12 @@ class UserSafeScope implements Scope
             return;
         }
 
-        // Sadece atanan kasaları gör (super_admin da dahil)
+        // super_admin tüm kasaları görebilir
+        if ($user->hasRole('super_admin')) {
+            return;
+        }
+
+        // Diğerleri sadece atanan kasaları görebilir
         $builder->whereHas('users', fn (Builder $q) => $q->where('users.id', $user->id));
     }
 }
