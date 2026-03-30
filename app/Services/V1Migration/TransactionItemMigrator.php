@@ -176,8 +176,8 @@ class TransactionItemMigrator extends BaseMigrator
 
     /**
      * V1 kategori ID'sini V3'te eşleştir.
-     * V1'deki "Diğer" kategorisini type'a göre V3'te "Diğer Gelir" veya "Diğer Gider"e eşleştir.
-     * V1'deki "Bağış / Yardım / Zekat / Kurban" kategorisini V3'de "Bağış > Genel"e eşleştir.
+     * Kurban alt kategorileri için isim tabanlı eşleştirme yapılır.
+     * "Bağış" kategorileri "Bağış > Genel"e, "Diğer" kategorileri type'a göre eşleştirilir.
      */
     private function resolveCategoryId(?int $v1CategoryId, TransactionType $type): ?int
     {
@@ -188,16 +188,49 @@ class TransactionItemMigrator extends BaseMigrator
         // V1'deki kategorinin adını kontrol et
         $v1Category = $this->v1()->table('transaction_categories')->where('id', $v1CategoryId)->first();
 
-        // "Bağış / Yardım / Zekat / Kurban" kategorisini "Bağış > Genel" (ID 6) olarak eşleştir
-        if ($v1Category && strpos($v1Category->name, 'Bağış') !== false && strpos($v1Category->name, 'Kurban') !== false) {
+        if (!$v1Category) {
+            return null;
+        }
+
+        // Kurban alt kategorileri için isim tabanlı eşleştirme
+        $categoryName = trim($v1Category->name);
+
+        // Specific Kurban subcategory mappings
+        if (stripos($categoryName, 'Vacip') !== false && stripos($categoryName, 'Kurban') !== false) {
+            return 13; // Vacip Kurban
+        }
+
+        if (stripos($categoryName, 'Akika') !== false) {
+            return 14; // Akika Kurbanı
+        }
+
+        if (stripos($categoryName, 'Sadaka') !== false && stripos($categoryName, 'Kurban') !== false) {
+            return 15; // Sadaka Kurbanı
+        }
+
+        if (stripos($categoryName, 'Adak') !== false && stripos($categoryName, 'Kurban') !== false) {
+            return 16; // Adak Kurbanı
+        }
+
+        // Diğer Kurban kategorileri (eğer parent kategori sadece "Kurban" ise)
+        if ($categoryName === 'Kurban' || stripos($categoryName, 'Kurban') !== false) {
+            return 12; // Kurban parent kategorisi
+        }
+
+        // "Bağış / Yardım / Zekat / Kurban" ortak kategorisini "Bağış > Genel" (ID 6) olarak eşleştir
+        if (strpos($categoryName, 'Bağış') !== false && strpos($categoryName, 'Zekat') !== false) {
+            return 6; // Bağış > Genel kategorisi
+        }
+
+        // Sadece "Bağış" diye başlayan kategorileri "Bağış > Genel"e eşleştir
+        if ($categoryName === 'Bağış' || stripos($categoryName, 'Bağış') === 0) {
             return 6; // Bağış > Genel kategorisi
         }
 
         // "Diğer" kategorisini type'a göre "Diğer Gelir" veya "Diğer Gider"e eşleştir
-        if ($v1Category && $v1Category->name === 'Diğer') {
-            // V3'te type'a göre "Diğer Gelir" veya "Diğer Gider" kategorisini bul
-            $categoryName = $type === TransactionType::INCOME ? 'Diğer Gelir' : 'Diğer Gider';
-            $v3Category = $this->v3()->table('safe_transaction_categories')->where('name', $categoryName)->first();
+        if ($categoryName === 'Diğer') {
+            $mappedCategoryName = $type === TransactionType::INCOME ? 'Diğer Gelir' : 'Diğer Gider';
+            $v3Category = $this->v3()->table('safe_transaction_categories')->where('name', $mappedCategoryName)->first();
             return $v3Category?->id;
         }
 

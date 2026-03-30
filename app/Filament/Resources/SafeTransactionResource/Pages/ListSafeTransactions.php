@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Filament\Resources\SafeTransactionResource\Pages;
 
 use App\Filament\Resources\SafeTransactionResource;
+use App\Traits\CustomTablePaginationTrait;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
 
 class ListSafeTransactions extends ListRecords
 {
+    use CustomTablePaginationTrait;
     protected static string $resource = SafeTransactionResource::class;
 
     public function mount(): void
