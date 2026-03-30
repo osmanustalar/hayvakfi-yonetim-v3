@@ -149,8 +149,8 @@ class SafeTransactionResource extends Resource
                     ->dateTime('d.m.Y H:i')
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->paginationPageOptions([20, 50, 100])
-            ->defaultPaginationPageOption(20)
+            ->paginationPageOptions([20, 50, 100, 200])
+            ->defaultPaginationPageOption(50)
             ->defaultSort('process_date', 'desc')
             ->filters([
                 // Tarih Filtreleri

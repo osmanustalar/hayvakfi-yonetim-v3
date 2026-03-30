@@ -159,6 +159,7 @@ class TransactionMigrator extends BaseMigrator
     /**
      * V1 kategori ID'sini V3'te eşleştir.
      * V1'deki "Diğer" kategorisini type'a göre V3'te "Diğer Gelir" veya "Diğer Gider"e eşleştir.
+     * V1'deki "Bağış / Yardım / Zekat / Kurban" kategorisini V3'de "Bağış > Genel"e eşleştir.
      */
     private function resolveCategoryId(?int $v1CategoryId, TransactionType $type): ?int
     {
@@ -166,8 +167,15 @@ class TransactionMigrator extends BaseMigrator
             return null;
         }
 
-        // V1'deki kategorinin adını kontrol et (Diğer kontrolü önce yapılmalı)
+        // V1'deki kategorinin adını kontrol et
         $v1Category = $this->v1()->table('transaction_categories')->where('id', $v1CategoryId)->first();
+
+        // "Bağış / Yardım / Zekat / Kurban" kategorisini "Bağış > Genel" (ID 6) olarak eşleştir
+        if ($v1Category && strpos($v1Category->name, 'Bağış') !== false && strpos($v1Category->name, 'Kurban') !== false) {
+            return 6; // Bağış > Genel kategorisi
+        }
+
+        // "Diğer" kategorisini type'a göre "Diğer Gelir" veya "Diğer Gider"e eşleştir
         if ($v1Category && $v1Category->name === 'Diğer') {
             // V3'te type'a göre "Diğer Gelir" veya "Diğer Gider" kategorisini bul
             $categoryName = $type === TransactionType::INCOME ? 'Diğer Gelir' : 'Diğer Gider';

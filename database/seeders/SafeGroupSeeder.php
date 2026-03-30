@@ -11,27 +11,19 @@ class SafeGroupSeeder extends Seeder
 {
     public function run(): void
     {
-        // KuveytTürk — API entegrasyon kasası
+        // Kuveyt Türk — SafeSeeder tarafından oluşturulan grubu API entegrasyonlu olarak işaretle
         SafeGroup::updateOrCreate(
-            ['name' => 'KuveytTürk'],
+            ['name' => 'Kuveyt Türk'],
             [
-                'company_id'         => 1,
-                'is_active'          => true,
                 'is_api_integration' => true,
-                'credentials'        => null,
-                'created_user_id'    => 1,
             ]
         );
 
-        // Ziraat Bankası — API entegrasyon kasası
+        // Ziraat — SafeSeeder tarafından oluşturulan grubu API entegrasyonlu olarak işaretle
         SafeGroup::updateOrCreate(
-            ['name' => 'Ziraat Bankası'],
+            ['name' => 'Ziraat'],
             [
-                'company_id'         => 1,
-                'is_active'          => true,
                 'is_api_integration' => true,
-                'credentials'        => null,
-                'created_user_id'    => 1,
             ]
         );
     }

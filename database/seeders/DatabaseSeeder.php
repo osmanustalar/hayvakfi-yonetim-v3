@@ -16,8 +16,8 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             ShieldSeeder::class,
             SafeTransactionCategorySeeder::class,
-            SafeGroupSeeder::class,
             SafeSeeder::class,
+            SafeGroupSeeder::class,
         ]);
     }
 }

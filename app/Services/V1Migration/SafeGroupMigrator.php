@@ -25,13 +25,17 @@ class SafeGroupMigrator extends BaseMigrator
         foreach ($v1Groups as $v1Group) {
             // ID'yi korumak için direct query kullan
             $existing = $this->v3()->table('safe_groups')->where('id', $v1Group->id)->first();
+
+            // "Kuveyt Türk" ve "Ziraat" grupları API entegrasyonlu olarak işaretle
+            $isApiIntegration = in_array($v1Group->name, ['Kuveyt Türk', 'Ziraat']);
+
             if ($existing) {
                 // Update var olan kaydı
                 $this->v3()->table('safe_groups')->where('id', $v1Group->id)->update([
                     'company_id' => $companyId,
                     'name' => $v1Group->name,
                     'is_active' => (bool) $v1Group->is_active,
-                    'is_api_integration' => false,
+                    'is_api_integration' => $isApiIntegration,
                     'created_user_id' => $v1Group->created_user_id,
                     'updated_at' => $v1Group->updated_at,
                 ]);
@@ -42,7 +46,7 @@ class SafeGroupMigrator extends BaseMigrator
                     'company_id' => $companyId,
                     'name' => $v1Group->name,
                     'is_active' => (bool) $v1Group->is_active,
-                    'is_api_integration' => false,
+                    'is_api_integration' => $isApiIntegration,
                     'created_user_id' => $v1Group->created_user_id,
                     'created_at' => $v1Group->created_at,
                     'updated_at' => $v1Group->updated_at,
