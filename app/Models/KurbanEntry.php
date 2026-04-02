@@ -20,6 +20,7 @@ class KurbanEntry extends Model
     protected $fillable = [
         'company_id',
         'kurban_list_id',
+        'kurban_group_id',
         'queue_number',
         'contact_id',
         'sacrifice_category_id',
@@ -53,6 +54,11 @@ class KurbanEntry extends Model
     public function list(): BelongsTo
     {
         return $this->belongsTo(KurbanList::class, 'kurban_list_id');
+    }
+
+    public function group(): BelongsTo
+    {
+        return $this->belongsTo(KurbanGroup::class, 'kurban_group_id');
     }
 
     public function contact(): BelongsTo

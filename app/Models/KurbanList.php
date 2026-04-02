@@ -20,6 +20,7 @@ class KurbanList extends Model
         'company_id',
         'kurban_season_id',
         'collector_user_id',
+        'name',
         'description',
         'is_active',
         'created_user_id',

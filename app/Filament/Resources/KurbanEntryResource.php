@@ -8,11 +8,14 @@ use App\Enums\LivestockType;
 use App\Filament\Resources\KurbanEntryResource\Pages;
 use App\Models\Contact;
 use App\Models\KurbanEntry;
+use App\Models\KurbanGroup;
 use App\Models\KurbanList;
 use App\Models\SafeTransactionCategory;
+use App\Services\KurbanGroupService;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -157,6 +160,13 @@ class KurbanEntryResource extends Resource
                     ->badge()
                     ->color('info'),
 
+                TextColumn::make('group.group_no')
+                    ->label('Grup No')
+                    ->sortable()
+                    ->badge()
+                    ->color('info')
+                    ->placeholder('-'),
+
                 TextColumn::make('contact.first_name')
                     ->label('Ad')
                     ->searchable()
@@ -208,6 +218,21 @@ class KurbanEntryResource extends Resource
             ->defaultPaginationPageOption(20)
             ->defaultSort('queue_number', 'desc')
             ->filters([
+                SelectFilter::make('kurban_season_id')
+                    ->label('Sezon')
+                    ->relationship('list.season', 'year')
+                    ->searchable(),
+
+                TernaryFilter::make('kurban_group_id')
+                    ->label('Grup Durumu')
+                    ->placeholder('Tümü')
+                    ->trueLabel('Gruba Atanmış')
+                    ->falseLabel('Gruba Atanmamış')
+                    ->queries(
+                        true: fn ($query) => $query->whereNotNull('kurban_group_id'),
+                        false: fn ($query) => $query->whereNull('kurban_group_id'),
+                    ),
+
                 TernaryFilter::make('is_paid')
                     ->label('Ödeme Durumu')
                     ->placeholder('Tümü')
@@ -228,8 +253,49 @@ class KurbanEntryResource extends Resource
                         ->toArray()
                     )
                     ->searchable(),
+
+                SelectFilter::make('kurban_group_id')
+                    ->label('Grup')
+                    ->relationship('group', 'group_no')
+                    ->searchable(),
             ])
             ->actions([
+                Action::make('change_group')
+                    ->label('Grup Değiştir')
+                    ->icon('heroicon-o-users')
+                    ->color('warning')
+                    ->visible(fn (KurbanEntry $record) => $record->livestock_type === LivestockType::LARGE)
+                    ->form([
+                        Select::make('kurban_group_id')
+                            ->label('Hedef Grup')
+                            ->options(fn (KurbanEntry $record) => KurbanGroup::query()
+                                ->where('kurban_season_id', $record->list->kurban_season_id)
+                                ->get()
+                                ->mapWithKeys(fn (KurbanGroup $g) => [
+                                    $g->id => "Grup #{$g->group_no} ({$g->entries_count} / " . KurbanGroup::MAX_MEMBERS . ")"
+                                ])
+                                ->toArray()
+                            )
+                            ->required()
+                            ->searchable(),
+                    ])
+                    ->action(function (KurbanEntry $record, array $data, KurbanGroupService $service) {
+                        try {
+                            $targetGroup = KurbanGroup::findOrFail($data['kurban_group_id']);
+                            $service->moveToGroup($record, $targetGroup);
+                            
+                            \Filament\Notifications\Notification::make()
+                                ->title('Grup başarıyla değiştirildi.')
+                                ->success()
+                                ->send();
+                        } catch (\Exception $e) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Hata')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
+                    }),
                 EditAction::make()->label('Düzenle'),
             ])
             ->bulkActions([

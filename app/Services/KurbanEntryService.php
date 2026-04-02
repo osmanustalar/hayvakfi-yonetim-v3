@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\LivestockType;
 use App\Enums\TransactionType;
 use App\Models\KurbanEntry;
 use App\Repositories\KurbanEntryRepository;
@@ -15,7 +16,8 @@ class KurbanEntryService
     public function __construct(
         private readonly KurbanEntryRepository $repository,
         private readonly SafeTransactionService $transactionService,
-        private readonly ContactService $contactService
+        private readonly ContactService $contactService,
+        private readonly KurbanGroupService $groupService,
     ) {}
 
     public function create(array $data): KurbanEntry
@@ -58,6 +60,12 @@ class KurbanEntryService
 
             /** @var KurbanEntry */
             $entry = $this->repository->create($data);
+
+            // Büyük baş ise aynı liste içinde gruba ata
+            if (($data['livestock_type'] ?? null) === LivestockType::LARGE->value
+                || ($data['livestock_type'] ?? null) === LivestockType::LARGE) {
+                $this->groupService->assignToGroup($entry);
+            }
 
             return $entry;
         });

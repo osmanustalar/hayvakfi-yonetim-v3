@@ -60,6 +60,11 @@ class KurbanSeason extends Model
         return $this->hasMany(KurbanList::class, 'kurban_season_id');
     }
 
+    public function groups(): HasMany
+    {
+        return $this->hasMany(KurbanGroup::class, 'kurban_season_id');
+    }
+
     public function entries(): HasManyThrough
     {
         return $this->hasManyThrough(KurbanEntry::class, KurbanList::class, 'kurban_season_id', 'kurban_list_id');

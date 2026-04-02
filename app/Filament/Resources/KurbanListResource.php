@@ -62,6 +62,11 @@ class KurbanListResource extends Resource
                                     ->preload()
                                     ->required(),
 
+                                \Filament\Forms\Components\TextInput::make('name')
+                                    ->label('Liste Adı')
+                                    ->required()
+                                    ->maxLength(200),
+
                                 Select::make('collector_user_id')
                                     ->label('Toplayıcı')
                                     ->relationship('collector', 'name')
@@ -90,6 +95,11 @@ class KurbanListResource extends Resource
                 TextColumn::make('season.year')
                     ->label('Sezon')
                     ->formatStateUsing(fn ($state) => $state.' Yılı')
+                    ->sortable()
+                    ->searchable(),
+
+                TextColumn::make('name')
+                    ->label('Liste Adı')
                     ->sortable()
                     ->searchable(),
 
