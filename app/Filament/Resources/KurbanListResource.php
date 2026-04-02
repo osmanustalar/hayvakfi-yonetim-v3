@@ -140,7 +140,7 @@ class KurbanListResource extends Resource
             ])
             ->recordUrl(fn (KurbanList $record): string =>
                 KurbanEntryResource::getUrl('index', [
-                    'tableFilters' => [
+                    'filters' => [
                         'kurban_list_id' => ['value' => (string) $record->id],
                     ],
                 ])
@@ -219,9 +219,7 @@ class KurbanListResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            EntriesRelationManager::class,
-        ];
+        return [];
     }
 
     public static function getPages(): array

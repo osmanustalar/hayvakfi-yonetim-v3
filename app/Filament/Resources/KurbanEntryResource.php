@@ -188,9 +188,6 @@ class KurbanEntryResource extends Resource
                     ->label('Liste')
                     ->formatStateUsing(fn ($record) => $record->list?->getTitle()),
 
-                TextColumn::make('list.collector.name')
-                    ->label('Toplayıcı'),
-
                 IconColumn::make('is_paid')
                     ->label('Ödendi')
                     ->boolean()
