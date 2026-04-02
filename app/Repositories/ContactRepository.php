@@ -11,12 +11,12 @@ class ContactRepository extends BaseRepository
 {
     public function __construct()
     {
-        parent::__construct(new Contact());
+        parent::__construct(new Contact);
     }
 
     public function search(string $query): Collection
     {
-        $term = '%' . $query . '%';
+        $term = '%'.$query.'%';
 
         return $this->model->newQuery()
             ->where(function ($builder) use ($term): void {

@@ -12,6 +12,7 @@ use Filament\Resources\Pages\ListRecords;
 class ListSafeTransactionCategories extends ListRecords
 {
     use CustomTablePaginationTrait;
+
     protected static string $resource = SafeTransactionCategoryResource::class;
 
     protected function getHeaderActions(): array

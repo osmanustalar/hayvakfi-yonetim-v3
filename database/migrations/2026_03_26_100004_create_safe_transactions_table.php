@@ -6,7 +6,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('safe_transactions', function (Blueprint $table): void {
@@ -22,9 +23,9 @@ return new class extends Migration {
             $table->decimal('item_rate', 10, 4)->nullable();
             $table->foreignId('target_safe_id')->nullable()->constrained('safes')->nullOnDelete();
             $table->foreignId('target_transaction_id')
-                  ->nullable()
-                  ->constrained('safe_transactions')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('safe_transactions')
+                ->nullOnDelete();
             $table->foreignId('contact_id')->nullable()->constrained('contacts')->nullOnDelete();
             $table->foreignId('reference_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('created_user_id')->nullable()->constrained('users')->nullOnDelete();

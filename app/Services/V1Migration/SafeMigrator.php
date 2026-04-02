@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\V1Migration;
 
-use App\Models\Safe;
-
 class SafeMigrator extends BaseMigrator
 {
     private array $currencyMap = [];

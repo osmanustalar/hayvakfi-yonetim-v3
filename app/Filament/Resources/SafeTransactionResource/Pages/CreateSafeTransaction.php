@@ -36,9 +36,9 @@ class CreateSafeTransaction extends CreateRecord
                 $transferData = [
                     'source_safe_id' => $data['safe_id'],
                     'target_safe_id' => $data['target_safe_id'],
-                    'amount'         => $data['amount'],
-                    'process_date'   => $data['process_date'],
-                    'description'    => $data['description'] ?? null,
+                    'amount' => $data['amount'],
+                    'process_date' => $data['process_date'],
+                    'description' => $data['description'] ?? null,
                 ];
                 $result = $service->createTransfer($transferData);
 

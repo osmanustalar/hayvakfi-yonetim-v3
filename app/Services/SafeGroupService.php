@@ -33,7 +33,8 @@ class SafeGroupService
     public function create(array $data): SafeGroup
     {
         $data['created_user_id'] = auth()->id();
-        $data['company_id']      = session('active_company_id');
+        $data['company_id'] = session('active_company_id');
+
         /** @var SafeGroup */
         return $this->repository->create($data);
     }
@@ -41,6 +42,7 @@ class SafeGroupService
     public function update(SafeGroup $safeGroup, array $data): SafeGroup
     {
         $this->repository->update($safeGroup->id, $data);
+
         /** @var SafeGroup */
         return $safeGroup->fresh();
     }

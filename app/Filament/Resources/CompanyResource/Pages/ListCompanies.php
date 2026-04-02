@@ -12,6 +12,7 @@ use Filament\Resources\Pages\ListRecords;
 class ListCompanies extends ListRecords
 {
     use CustomTablePaginationTrait;
+
     protected static string $resource = CompanyResource::class;
 
     protected function getHeaderActions(): array

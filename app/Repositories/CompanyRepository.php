@@ -11,7 +11,7 @@ class CompanyRepository extends BaseRepository
 {
     public function __construct()
     {
-        parent::__construct(new Company());
+        parent::__construct(new Company);
     }
 
     public function allActive(): Collection

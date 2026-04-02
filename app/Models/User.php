@@ -4,20 +4,20 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Filament\Models\Contracts\FilamentUser;
-use Filament\Panel;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use App\Traits\LogsActivity;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements FilamentUser
 {
-    use HasFactory, Notifiable, SoftDeletes, HasRoles, LogsActivity;
+    use HasFactory, HasRoles, LogsActivity, Notifiable, SoftDeletes;
 
     protected $fillable = [
         'name',
@@ -35,7 +35,7 @@ class User extends Authenticatable implements FilamentUser
     protected function casts(): array
     {
         return [
-            'password'  => 'hashed',
+            'password' => 'hashed',
             'can_login' => 'boolean',
             'is_active' => 'boolean',
         ];

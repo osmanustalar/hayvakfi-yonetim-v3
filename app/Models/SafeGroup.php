@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SafeGroup extends Model
 {
-    use HasFactory, SoftDeletes, LogsActivity;
+    use HasFactory, LogsActivity, SoftDeletes;
 
     protected $fillable = [
         'company_id',
@@ -28,15 +28,15 @@ class SafeGroup extends Model
     protected function casts(): array
     {
         return [
-            'credentials'       => 'encrypted:array',
-            'is_active'         => 'boolean',
+            'credentials' => 'encrypted:array',
+            'is_active' => 'boolean',
             'is_api_integration' => 'boolean',
         ];
     }
 
     protected static function booted(): void
     {
-        static::addGlobalScope(new CompanyScope());
+        static::addGlobalScope(new CompanyScope);
     }
 
     public function company(): BelongsTo

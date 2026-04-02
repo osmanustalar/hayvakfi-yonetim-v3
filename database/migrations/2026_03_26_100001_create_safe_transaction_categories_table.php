@@ -6,7 +6,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('safe_transaction_categories', function (Blueprint $table): void {
@@ -15,9 +16,9 @@ return new class extends Migration {
             $table->string('name');
             $table->string('type', 20)->nullable();
             $table->foreignId('parent_id')
-                  ->nullable()
-                  ->constrained('safe_transaction_categories')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('safe_transaction_categories')
+                ->nullOnDelete();
             $table->integer('sort_order')->default(0);
             $table->boolean('is_active')->default(true);
             $table->boolean('is_disable_in_report')->default(false);

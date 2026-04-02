@@ -12,6 +12,7 @@ use Filament\Resources\Pages\ListRecords;
 class ListKurbanSeasons extends ListRecords
 {
     use CustomTablePaginationTrait;
+
     protected static string $resource = KurbanSeasonResource::class;
 
     protected function getHeaderActions(): array

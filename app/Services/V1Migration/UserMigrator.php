@@ -23,10 +23,10 @@ class UserMigrator extends BaseMigrator
         $defaultCompanyId = $this->v3()->table('companies')->first()?->id ?? 1;
 
         foreach ($v1Users as $v1User) {
-            $phone = ($v1User->phone_code ?? '+90') . ($v1User->phone_number ?? '');
+            $phone = ($v1User->phone_code ?? '+90').($v1User->phone_number ?? '');
 
             // Password NULL ise dummy hash oluştur (kullanıcı şifre sıfırlamalı)
-            $password = $v1User->password ?? bcrypt('password-to-reset-' . now()->timestamp);
+            $password = $v1User->password ?? bcrypt('password-to-reset-'.now()->timestamp);
 
             User::updateOrCreate(
                 ['id' => $v1User->id],

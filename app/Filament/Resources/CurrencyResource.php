@@ -133,10 +133,10 @@ class CurrencyResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListCurrencies::route('/'),
+            'index' => Pages\ListCurrencies::route('/'),
             'create' => Pages\CreateCurrency::route('/create'),
-            'view'   => Pages\ViewCurrency::route('/{record}'),
-            'edit'   => Pages\EditCurrency::route('/{record}/edit'),
+            'view' => Pages\ViewCurrency::route('/{record}'),
+            'edit' => Pages\EditCurrency::route('/{record}/edit'),
         ];
     }
 }

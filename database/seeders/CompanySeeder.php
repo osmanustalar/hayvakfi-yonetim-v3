@@ -14,11 +14,11 @@ class CompanySeeder extends Seeder
         Company::updateOrCreate(
             ['name' => 'HAYVAKFI'],
             [
-                'name'        => 'HAYVAKFI',
-                'tax_number'  => '12345678901',
-                'address'     => null,
-                'phone'       => '+90 212 123 45 67',
-                'is_active'   => true,
+                'name' => 'HAYVAKFI',
+                'tax_number' => '12345678901',
+                'address' => null,
+                'phone' => '+90 212 123 45 67',
+                'is_active' => true,
             ]
         );
     }

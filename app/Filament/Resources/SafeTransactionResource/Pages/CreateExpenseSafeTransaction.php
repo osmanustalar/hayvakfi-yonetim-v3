@@ -11,14 +11,15 @@ use App\Helpers\Helper;
 use App\Models\Contact;
 use App\Models\Safe;
 use App\Models\SafeTransactionCategory;
+use App\Models\User;
 use App\Services\SafeTransactionService;
 use Filament\Forms;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\CreateRecord;
 use Filament\Schemas;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
-use Filament\Notifications\Notification;
-use Filament\Resources\Pages\CreateRecord;
 use Filament\Support\RawJs;
 use Illuminate\Database\Eloquent\Model;
 
@@ -81,10 +82,10 @@ class CreateExpenseSafeTransaction extends CreateRecord
                                             ->options(
                                                 Safe::query()
                                                     ->where('is_active', true)
-                                                    ->whereHas('safeGroup', fn($q) => $q->where('is_api_integration', false))
+                                                    ->whereHas('safeGroup', fn ($q) => $q->where('is_api_integration', false))
                                                     ->get()
                                                     ->mapWithKeys(fn (Safe $s): array => [
-                                                        $s->id => $s->name . ' (' . ($s->currency?->symbol ?? '') . ')',
+                                                        $s->id => $s->name.' ('.($s->currency?->symbol ?? '').')',
                                                     ])
                                                     ->toArray()
                                             )
@@ -99,7 +100,7 @@ class CreateExpenseSafeTransaction extends CreateRecord
                                                     return null;
                                                 }
 
-                                                return 'Mevcut Bakiye: ' . number_format((float) $safe->balance, 2, ',', '.') . ' ' . ($safe->currency?->symbol ?? 'TRY');
+                                                return 'Mevcut Bakiye: '.number_format((float) $safe->balance, 2, ',', '.').' '.($safe->currency?->symbol ?? 'TRY');
                                             }),
 
                                         Forms\Components\TextInput::make('total_amount_display')
@@ -206,7 +207,7 @@ class CreateExpenseSafeTransaction extends CreateRecord
                                 Forms\Components\Select::make('reference_user_id')
                                     ->label('İşlemi Yapan Kullanıcı')
                                     ->options(function (): array {
-                                        return \App\Models\User::query()
+                                        return User::query()
                                             ->whereHas('companies', fn ($q) => $q->where('company_id', session('active_company_id')))
                                             ->orderBy('name')
                                             ->get()
@@ -250,19 +251,19 @@ class CreateExpenseSafeTransaction extends CreateRecord
     {
         $items = collect($data['items'] ?? [])->map(fn (array $item): array => [
             'transaction_category_id' => (int) $item['transaction_category_id'],
-            'amount'                  => (float) ($item['amount'] ?? 0),
+            'amount' => (float) ($item['amount'] ?? 0),
         ])->toArray();
         $total = collect($items)->sum(fn ($i): float => $i['amount']);
 
         $payload = [
-            'safe_id'            => $this->safeId,
-            'type'               => TransactionType::EXPENSE->value,
-            'total_amount'       => $total,
-            'process_date'       => $data['process_date'],
-            'description'        => $data['description'] ?? null,
-            'reference_user_id'  => $data['reference_user_id'] ?? null,
-            'contact_id'         => $data['contact_id'] ?? null,
-            'items'              => $items,
+            'safe_id' => $this->safeId,
+            'type' => TransactionType::EXPENSE->value,
+            'total_amount' => $total,
+            'process_date' => $data['process_date'],
+            'description' => $data['description'] ?? null,
+            'reference_user_id' => $data['reference_user_id'] ?? null,
+            'contact_id' => $data['contact_id'] ?? null,
+            'items' => $items,
         ];
 
         try {
@@ -310,10 +311,10 @@ class CreateExpenseSafeTransaction extends CreateRecord
             if ($children->isEmpty()) {
                 $options[$parent->id] = $parent->name;
             } else {
-                $options[$parent->id] = $parent->name . ' (Seçilemez)';
+                $options[$parent->id] = $parent->name.' (Seçilemez)';
 
                 foreach ($children as $child) {
-                    $options[$child->id] = '⤷ ' . $parent->name . ' → ' . $child->name;
+                    $options[$child->id] = '⤷ '.$parent->name.' → '.$child->name;
                 }
             }
         }
@@ -327,9 +328,9 @@ class CreateExpenseSafeTransaction extends CreateRecord
     private function buildContactOptions(ContactType $contactType): array
     {
         $column = match ($contactType) {
-            ContactType::DONOR         => 'is_donor',
+            ContactType::DONOR => 'is_donor',
             ContactType::AID_RECIPIENT => 'is_aid_recipient',
-            ContactType::STUDENT       => 'is_student',
+            ContactType::STUDENT => 'is_student',
         };
 
         return Contact::query()
@@ -337,7 +338,7 @@ class CreateExpenseSafeTransaction extends CreateRecord
             ->orderBy('first_name')
             ->get()
             ->mapWithKeys(fn (Contact $c): array => [
-                $c->id => $c->first_name . ' ' . $c->last_name . ($c->phone ? ' (' . $c->phone . ')' : ''),
+                $c->id => $c->first_name.' '.$c->last_name.($c->phone ? ' ('.$c->phone.')' : ''),
             ])
             ->toArray();
     }

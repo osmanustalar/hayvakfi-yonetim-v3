@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\UserResource\Pages;
 
 use App\Filament\Resources\UserResource;
+use App\Models\User;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
@@ -15,7 +16,7 @@ class ViewUser extends ViewRecord
 
     public function getTitle(): string
     {
-        /** @var \App\Models\User $record */
+        /** @var User $record */
         $record = $this->record;
 
         return $record->name;

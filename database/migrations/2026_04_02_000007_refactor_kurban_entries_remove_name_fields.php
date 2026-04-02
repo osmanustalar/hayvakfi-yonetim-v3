@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         // Önce NULL olan contact_id kayıtları için Contact oluştur
-        DB::statement("
+        DB::statement('
             INSERT INTO contacts (first_name, last_name, phone, is_donor, created_user_id, created_at, updated_at)
             SELECT
                 ke.first_name,
@@ -30,19 +30,19 @@ return new class extends Migration
                 AND ke.phone IS NOT NULL
             )
             GROUP BY ke.phone, ke.first_name, ke.last_name, ke.created_user_id, ke.created_at, ke.updated_at
-        ");
+        ');
 
         // Telefon eşleşmesi olanları güncelle
-        DB::statement("
+        DB::statement('
             UPDATE kurban_entries ke
             INNER JOIN contacts c ON c.phone = ke.phone
             SET ke.contact_id = c.id
             WHERE ke.contact_id IS NULL
             AND ke.phone IS NOT NULL
-        ");
+        ');
 
         // İsim-soyad eşleşmesi olanları güncelle (telefon yoksa)
-        DB::statement("
+        DB::statement('
             UPDATE kurban_entries ke
             INNER JOIN (
                 SELECT MIN(c.id) as contact_id, c.first_name, c.last_name
@@ -51,16 +51,16 @@ return new class extends Migration
             ) c ON c.first_name = ke.first_name AND c.last_name = ke.last_name
             SET ke.contact_id = c.contact_id
             WHERE ke.contact_id IS NULL
-        ");
+        ');
 
         // Hala NULL olanlar için default contact oluştur ve ata
         $defaultContact = DB::table('contacts')->insertGetId([
-            'first_name'       => 'Bilinmeyen',
-            'last_name'        => 'Kişi',
-            'is_donor'         => true,
-            'created_user_id'  => 1,
-            'created_at'       => now(),
-            'updated_at'       => now(),
+            'first_name' => 'Bilinmeyen',
+            'last_name' => 'Kişi',
+            'is_donor' => true,
+            'created_user_id' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
         DB::statement("
@@ -77,7 +77,7 @@ return new class extends Migration
         // Sonra FK'yi değiştir (iki aşamada, çünkü Laravel bazı DB'lerde sorun çıkarabiliyor)
         try {
             DB::statement('ALTER TABLE kurban_entries DROP FOREIGN KEY kurban_entries_contact_id_foreign');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // FK yoksa devam et
         }
 

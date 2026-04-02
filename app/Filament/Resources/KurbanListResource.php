@@ -13,7 +13,6 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
@@ -57,7 +56,7 @@ class KurbanListResource extends Resource
                                 Select::make('kurban_season_id')
                                     ->label('Sezon')
                                     ->relationship('season', 'year')
-                                    ->getOptionLabelFromRecordUsing(fn ($record) => $record->year . ' Yılı Kurban Sezonu')
+                                    ->getOptionLabelFromRecordUsing(fn ($record) => $record->year.' Yılı Kurban Sezonu')
                                     ->searchable()
                                     ->preload()
                                     ->required(),
@@ -89,7 +88,7 @@ class KurbanListResource extends Resource
             ->columns([
                 TextColumn::make('season.year')
                     ->label('Sezon')
-                    ->formatStateUsing(fn ($state) => $state . ' Yılı')
+                    ->formatStateUsing(fn ($state) => $state.' Yılı')
                     ->sortable()
                     ->searchable(),
 
@@ -132,7 +131,7 @@ class KurbanListResource extends Resource
                 SelectFilter::make('kurban_season_id')
                     ->label('Sezon')
                     ->relationship('season', 'year')
-                    ->getOptionLabelFromRecordUsing(fn ($record) => $record->year . ' Yılı'),
+                    ->getOptionLabelFromRecordUsing(fn ($record) => $record->year.' Yılı'),
 
                 SelectFilter::make('collector_user_id')
                     ->label('Toplayıcı')
@@ -159,10 +158,10 @@ class KurbanListResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListKurbanLists::route('/'),
+            'index' => Pages\ListKurbanLists::route('/'),
             'create' => Pages\CreateKurbanList::route('/create'),
-            'view'   => Pages\ViewKurbanList::route('/{record}'),
-            'edit'   => Pages\EditKurbanList::route('/{record}/edit'),
+            'view' => Pages\ViewKurbanList::route('/{record}'),
+            'edit' => Pages\EditKurbanList::route('/{record}/edit'),
         ];
     }
 }

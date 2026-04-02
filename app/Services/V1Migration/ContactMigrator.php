@@ -38,7 +38,7 @@ class ContactMigrator extends BaseMigrator
             $additionalPhones = [];
 
             foreach ($v1Phones as $idx => $phoneRecord) {
-                $fullPhone = ($phoneRecord->phone_code ?? '+90') . ($phoneRecord->phone_number ?? '');
+                $fullPhone = ($phoneRecord->phone_code ?? '+90').($phoneRecord->phone_number ?? '');
                 if ($idx === 0) {
                     $phone = $fullPhone;
                 } else {

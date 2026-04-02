@@ -11,7 +11,7 @@ enum OperationType: string
 
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::EXCHANGE => 'Döviz İşlemi',
             self::TRANSFER => 'Transfer',
         };

@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SafeTransactionItem extends Model
 {
-    use HasFactory, SoftDeletes, LogsActivity;
+    use HasFactory, LogsActivity, SoftDeletes;
 
     protected $fillable = [
         'company_id',
@@ -32,7 +32,7 @@ class SafeTransactionItem extends Model
 
     protected static function booted(): void
     {
-        static::addGlobalScope(new CompanyScope());
+        static::addGlobalScope(new CompanyScope);
     }
 
     public function company(): BelongsTo

@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SafeTransaction extends Model
 {
-    use HasFactory, SoftDeletes, LogsActivity;
+    use HasFactory, LogsActivity, SoftDeletes;
 
     protected $fillable = [
         'company_id',
@@ -44,21 +44,21 @@ class SafeTransaction extends Model
     protected function casts(): array
     {
         return [
-            'type'                  => TransactionType::class,
-            'operation_type'        => OperationType::class,
-            'total_amount'          => 'decimal:4',
-            'exchange_rate'         => 'decimal:4',
-            'item_rate'             => 'decimal:4',
+            'type' => TransactionType::class,
+            'operation_type' => OperationType::class,
+            'total_amount' => 'decimal:4',
+            'exchange_rate' => 'decimal:4',
+            'item_rate' => 'decimal:4',
             'balance_after_created' => 'decimal:4',
-            'process_date'          => 'date',
-            'transaction_date'      => 'datetime',
-            'is_show'               => 'boolean',
+            'process_date' => 'date',
+            'transaction_date' => 'datetime',
+            'is_show' => 'boolean',
         ];
     }
 
     protected static function booted(): void
     {
-        static::addGlobalScope(new CompanyScope());
+        static::addGlobalScope(new CompanyScope);
     }
 
     public function company(): BelongsTo

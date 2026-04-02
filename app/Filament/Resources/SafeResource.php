@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\SafeResource\Pages;
-use App\Filament\Resources\SafeTransactionResource;
 use App\Models\Currency;
 use App\Models\Safe;
 use App\Models\SafeGroup;
-use App\Models\User;
-use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -22,13 +22,13 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
-use Filament\Actions\Action;
-use Filament\Actions\ActionGroup;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 
 class SafeResource extends Resource
 {
@@ -51,7 +51,7 @@ class SafeResource extends Resource
         return (string) static::getModel()::count();
     }
 
-    public static function getTableQuery(): \Illuminate\Database\Eloquent\Builder
+    public static function getTableQuery(): Builder
     {
         $query = parent::getTableQuery()
             ->with('safeGroup')
@@ -141,22 +141,22 @@ class SafeResource extends Resource
                     ->label('Kasa Adı')
                     ->searchable()
                     ->sortable()
-                    ->url(fn (Safe $record): string => SafeTransactionResource::getUrl('index') . '?safe_id=' . $record->id),
+                    ->url(fn (Safe $record): string => SafeTransactionResource::getUrl('index').'?safe_id='.$record->id),
 
                 TextColumn::make('balance')
                     ->label('Bakiye')
                     ->numeric(decimalPlaces: 2)
                     ->sortable()
-                    ->url(fn (Safe $record): string => SafeTransactionResource::getUrl('index') . '?safe_id=' . $record->id),
+                    ->url(fn (Safe $record): string => SafeTransactionResource::getUrl('index').'?safe_id='.$record->id),
 
                 TextColumn::make('currency.symbol')
                     ->label('Döviz')
-                    ->url(fn (Safe $record): string => SafeTransactionResource::getUrl('index') . '?safe_id=' . $record->id),
+                    ->url(fn (Safe $record): string => SafeTransactionResource::getUrl('index').'?safe_id='.$record->id),
 
                 IconColumn::make('is_active')
                     ->label('Aktif')
                     ->boolean()
-                    ->url(fn (Safe $record): string => SafeTransactionResource::getUrl('index') . '?safe_id=' . $record->id),
+                    ->url(fn (Safe $record): string => SafeTransactionResource::getUrl('index').'?safe_id='.$record->id),
 
                 TextColumn::make('sort_order')
                     ->label('Sıra')
@@ -164,11 +164,10 @@ class SafeResource extends Resource
 
                 TextColumn::make('latest_transaction_date')
                     ->label('Son Hareket')
-                    ->formatStateUsing(fn (?string $state): string =>
-                        $state ? \Carbon\Carbon::parse($state)->format('d.m.Y H:i') : '—'
+                    ->formatStateUsing(fn (?string $state): string => $state ? Carbon::parse($state)->format('d.m.Y H:i') : '—'
                     )
                     ->placeholder('—')
-                    ->url(fn (Safe $record): string => SafeTransactionResource::getUrl('index') . '?safe_id=' . $record->id),
+                    ->url(fn (Safe $record): string => SafeTransactionResource::getUrl('index').'?safe_id='.$record->id),
             ])
             ->paginationPageOptions([20, 50, 100])
             ->defaultPaginationPageOption(20)
@@ -208,7 +207,7 @@ class SafeResource extends Resource
                     ->label('Hareketler')
                     ->icon('heroicon-o-list-bullet')
                     ->color('gray')
-                    ->url(fn (Safe $record): string => SafeTransactionResource::getUrl('index') . '?safe_id=' . $record->id),
+                    ->url(fn (Safe $record): string => SafeTransactionResource::getUrl('index').'?safe_id='.$record->id),
 
                 ActionGroup::make([
                     Action::make('transfer')
@@ -243,10 +242,10 @@ class SafeResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListSafes::route('/'),
+            'index' => Pages\ListSafes::route('/'),
             'create' => Pages\CreateSafe::route('/create'),
-            'view'   => Pages\ViewSafe::route('/{record}'),
-            'edit'   => Pages\EditSafe::route('/{record}/edit'),
+            'view' => Pages\ViewSafe::route('/{record}'),
+            'edit' => Pages\EditSafe::route('/{record}/edit'),
         ];
     }
 }

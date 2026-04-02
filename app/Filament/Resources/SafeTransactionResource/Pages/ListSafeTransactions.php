@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Builder;
 class ListSafeTransactions extends ListRecords
 {
     use CustomTablePaginationTrait;
+
     protected static string $resource = SafeTransactionResource::class;
 
     public function mount(): void

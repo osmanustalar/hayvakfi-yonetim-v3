@@ -6,14 +6,14 @@ namespace App\Filament\Resources\SafeTransactionResource\Pages;
 
 use App\Filament\Resources\SafeTransactionResource;
 use App\Models\Safe;
+use App\Models\User;
 use App\Services\SafeTransactionService;
 use Filament\Forms;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\CreateRecord;
 use Filament\Schemas;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
-use Filament\Notifications\Notification;
-use Filament\Resources\Pages\CreateRecord;
-use Filament\Support\RawJs;
 use Illuminate\Database\Eloquent\Model;
 
 class CreateTransferSafeTransaction extends CreateRecord
@@ -77,10 +77,10 @@ class CreateTransferSafeTransaction extends CreateRecord
                                                     ->where('is_active', true)
                                                     ->where('id', '!=', $sourceSafe->id)
                                                     ->where('currency_id', $sourceSafe->currency_id)
-                                                    ->whereHas('safeGroup', fn($q) => $q->where('is_api_integration', false))
+                                                    ->whereHas('safeGroup', fn ($q) => $q->where('is_api_integration', false))
                                                     ->get()
                                                     ->mapWithKeys(fn (Safe $s): array => [
-                                                        $s->id => $s->name . ' (' . ($s->currency?->symbol ?? '') . ')',
+                                                        $s->id => $s->name.' ('.($s->currency?->symbol ?? '').')',
                                                     ])
                                                     ->toArray();
                                             })
@@ -92,7 +92,7 @@ class CreateTransferSafeTransaction extends CreateRecord
                                                     return null;
                                                 }
 
-                                                return 'Mevcut Bakiye: ' . number_format((float) $safe->balance, 2, ',', '.') . ' ' . ($safe->currency?->symbol ?? 'TRY');
+                                                return 'Mevcut Bakiye: '.number_format((float) $safe->balance, 2, ',', '.').' '.($safe->currency?->symbol ?? 'TRY');
                                             }),
                                     ]),
 
@@ -105,10 +105,10 @@ class CreateTransferSafeTransaction extends CreateRecord
                                             ->options(
                                                 Safe::query()
                                                     ->where('is_active', true)
-                                                    ->whereHas('safeGroup', fn($q) => $q->where('is_api_integration', false))
+                                                    ->whereHas('safeGroup', fn ($q) => $q->where('is_api_integration', false))
                                                     ->get()
                                                     ->mapWithKeys(fn (Safe $s): array => [
-                                                        $s->id => $s->name . ' (' . ($s->currency?->symbol ?? '') . ')',
+                                                        $s->id => $s->name.' ('.($s->currency?->symbol ?? '').')',
                                                     ])
                                                     ->toArray()
                                             )
@@ -121,7 +121,7 @@ class CreateTransferSafeTransaction extends CreateRecord
                                                     return null;
                                                 }
 
-                                                return 'Mevcut Bakiye: ' . number_format((float) $sourceSafe->balance, 2, ',', '.') . ' ' . ($sourceSafe->currency?->symbol ?? 'TRY');
+                                                return 'Mevcut Bakiye: '.number_format((float) $sourceSafe->balance, 2, ',', '.').' '.($sourceSafe->currency?->symbol ?? 'TRY');
                                             }),
                                     ]),
                             ]),
@@ -157,7 +157,7 @@ class CreateTransferSafeTransaction extends CreateRecord
                                     ->label('İşlemi Yapan Kullanıcı')
                                     ->required()
                                     ->options(function (): array {
-                                        return \App\Models\User::query()
+                                        return User::query()
                                             ->whereHas('companies', fn ($q) => $q->where('company_id', session('active_company_id')))
                                             ->orderBy('name')
                                             ->get()
@@ -201,12 +201,12 @@ class CreateTransferSafeTransaction extends CreateRecord
         }
 
         $payload = [
-            'source_safe_id'     => $this->safeId,
-            'target_safe_id'     => $data['target_safe_id'],
-            'amount'             => (float) $data['amount'],
-            'process_date'       => $data['process_date'],
-            'description'        => $data['description'] ?? null,
-            'reference_user_id'  => $data['reference_user_id'] ?? null,
+            'source_safe_id' => $this->safeId,
+            'target_safe_id' => $data['target_safe_id'],
+            'amount' => (float) $data['amount'],
+            'process_date' => $data['process_date'],
+            'description' => $data['description'] ?? null,
+            'reference_user_id' => $data['reference_user_id'] ?? null,
         ];
 
         try {

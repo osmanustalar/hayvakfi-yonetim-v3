@@ -8,16 +8,17 @@ use App\Enums\OperationType;
 use App\Enums\TransactionType;
 use App\Filament\Resources\SafeTransactionResource;
 use App\Models\Safe;
+use App\Models\SafeTransaction;
+use App\Models\User;
 use App\Repositories\SafeTransactionItemRepository;
 use App\Repositories\SafeTransactionRepository;
 use Filament\Forms;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\CreateRecord;
 use Filament\Schemas;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
-use Filament\Notifications\Notification;
-use Filament\Resources\Pages\CreateRecord;
-use Filament\Support\RawJs;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
@@ -85,7 +86,7 @@ class CreateExchangeSafeTransaction extends CreateRecord
                                                     ->where('safe_group_id', $sourceSafe->safe_group_id)
                                                     ->get()
                                                     ->mapWithKeys(fn (Safe $s): array => [
-                                                        $s->id => $s->name . ' (' . ($s->currency?->symbol ?? '') . ')',
+                                                        $s->id => $s->name.' ('.($s->currency?->symbol ?? '').')',
                                                     ])
                                                     ->toArray();
                                             })
@@ -97,7 +98,7 @@ class CreateExchangeSafeTransaction extends CreateRecord
                                                     return null;
                                                 }
 
-                                                return 'Mevcut Bakiye: ' . number_format((float) $safe->balance, 2, ',', '.') . ' ' . ($safe->currency?->symbol ?? 'TRY');
+                                                return 'Mevcut Bakiye: '.number_format((float) $safe->balance, 2, ',', '.').' '.($safe->currency?->symbol ?? 'TRY');
                                             }),
                                     ]),
 
@@ -110,10 +111,10 @@ class CreateExchangeSafeTransaction extends CreateRecord
                                             ->options(
                                                 Safe::query()
                                                     ->where('is_active', true)
-                                                    ->whereHas('safeGroup', fn($q) => $q->where('is_api_integration', false))
+                                                    ->whereHas('safeGroup', fn ($q) => $q->where('is_api_integration', false))
                                                     ->get()
                                                     ->mapWithKeys(fn (Safe $s): array => [
-                                                        $s->id => $s->name . ' (' . ($s->currency?->symbol ?? '') . ')',
+                                                        $s->id => $s->name.' ('.($s->currency?->symbol ?? '').')',
                                                     ])
                                                     ->toArray()
                                             )
@@ -126,7 +127,7 @@ class CreateExchangeSafeTransaction extends CreateRecord
                                                     return null;
                                                 }
 
-                                                return 'Mevcut Bakiye: ' . number_format((float) $sourceSafe->balance, 2, ',', '.') . ' ' . ($sourceSafe->currency?->symbol ?? 'TRY');
+                                                return 'Mevcut Bakiye: '.number_format((float) $sourceSafe->balance, 2, ',', '.').' '.($sourceSafe->currency?->symbol ?? 'TRY');
                                             }),
                                     ]),
                             ]),
@@ -188,7 +189,7 @@ class CreateExchangeSafeTransaction extends CreateRecord
                                     ->label('İşlemi Yapan Kullanıcı')
                                     ->required()
                                     ->options(function (): array {
-                                        return \App\Models\User::query()
+                                        return User::query()
                                             ->whereHas('companies', fn ($q) => $q->where('company_id', session('active_company_id')))
                                             ->orderBy('name')
                                             ->get()
@@ -232,12 +233,12 @@ class CreateExchangeSafeTransaction extends CreateRecord
 
         $sourceAmount = (float) $data['source_amount'];
         $targetAmount = (float) $data['target_amount'];
-        $itemRate     = (float) ($data['item_rate'] ?? 0);
-        $companyId    = (int) session('active_company_id');
-        $createdById  = auth()->id();
+        $itemRate = (float) ($data['item_rate'] ?? 0);
+        $companyId = (int) session('active_company_id');
+        $createdById = auth()->id();
 
         try {
-            /** @var array{source: \App\Models\SafeTransaction, target: \App\Models\SafeTransaction} $result */
+            /** @var array{source: SafeTransaction, target: SafeTransaction} $result */
             $result = DB::transaction(function () use (
                 $sourceSafe,
                 $targetSafe,
@@ -255,21 +256,21 @@ class CreateExchangeSafeTransaction extends CreateRecord
                 $itemRepo = app(SafeTransactionItemRepository::class);
 
                 // Kaynak: gider (çıkış kasa)
-                /** @var \App\Models\SafeTransaction */
+                /** @var SafeTransaction */
                 $sourceTransaction = $txRepo->create([
-                    'company_id'            => $companyId,
-                    'safe_id'               => $sourceSafe->id,
-                    'type'                  => TransactionType::EXPENSE->value,
-                    'operation_type'        => OperationType::EXCHANGE->value,
-                    'total_amount'          => $sourceAmount,
-                    'amount'                => $sourceAmount,
-                    'currency_id'           => $sourceSafe->currency_id,
-                    'item_rate'             => $itemRate,
-                    'target_safe_id'        => $targetSafe->id,
-                    'process_date'          => $data['process_date'],
-                    'description'           => $data['description'] ?? null,
-                    'reference_user_id'     => $data['reference_user_id'] ?? null,
-                    'created_user_id'       => $createdById,
+                    'company_id' => $companyId,
+                    'safe_id' => $sourceSafe->id,
+                    'type' => TransactionType::EXPENSE->value,
+                    'operation_type' => OperationType::EXCHANGE->value,
+                    'total_amount' => $sourceAmount,
+                    'amount' => $sourceAmount,
+                    'currency_id' => $sourceSafe->currency_id,
+                    'item_rate' => $itemRate,
+                    'target_safe_id' => $targetSafe->id,
+                    'process_date' => $data['process_date'],
+                    'description' => $data['description'] ?? null,
+                    'reference_user_id' => $data['reference_user_id'] ?? null,
+                    'created_user_id' => $createdById,
                     'balance_after_created' => 0,
                 ]);
 
@@ -277,22 +278,22 @@ class CreateExchangeSafeTransaction extends CreateRecord
                 $sourceTransaction->update(['balance_after_created' => $sourceSafe->fresh()->balance]);
 
                 // Hedef: gelir (giriş kasa)
-                /** @var \App\Models\SafeTransaction */
+                /** @var SafeTransaction */
                 $targetTransaction = $txRepo->create([
-                    'company_id'            => $companyId,
-                    'safe_id'               => $targetSafe->id,
-                    'type'                  => TransactionType::INCOME->value,
-                    'operation_type'        => OperationType::EXCHANGE->value,
-                    'total_amount'          => $targetAmount,
-                    'amount'                => $targetAmount,
-                    'currency_id'           => $targetSafe->currency_id,
-                    'item_rate'             => $itemRate,
-                    'target_safe_id'        => $sourceSafe->id,
+                    'company_id' => $companyId,
+                    'safe_id' => $targetSafe->id,
+                    'type' => TransactionType::INCOME->value,
+                    'operation_type' => OperationType::EXCHANGE->value,
+                    'total_amount' => $targetAmount,
+                    'amount' => $targetAmount,
+                    'currency_id' => $targetSafe->currency_id,
+                    'item_rate' => $itemRate,
+                    'target_safe_id' => $sourceSafe->id,
                     'target_transaction_id' => $sourceTransaction->id,
-                    'process_date'          => $data['process_date'],
-                    'description'           => $data['description'] ?? null,
-                    'reference_user_id'     => $data['reference_user_id'] ?? null,
-                    'created_user_id'       => $createdById,
+                    'process_date' => $data['process_date'],
+                    'description' => $data['description'] ?? null,
+                    'reference_user_id' => $data['reference_user_id'] ?? null,
+                    'created_user_id' => $createdById,
                     'balance_after_created' => 0,
                 ]);
 

@@ -18,7 +18,7 @@ class ViewSafeTransaction extends ViewRecord
         /** @var SafeTransaction $record */
         $record = $this->record;
 
-        return 'Kasa İşlemi #' . $record->id;
+        return 'Kasa İşlemi #'.$record->id;
     }
 
     protected function getHeaderActions(): array

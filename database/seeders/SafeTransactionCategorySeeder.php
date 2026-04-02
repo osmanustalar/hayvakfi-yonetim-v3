@@ -16,18 +16,18 @@ class SafeTransactionCategorySeeder extends Seeder
         SafeTransactionCategory::updateOrCreate(
             ['id' => 1],
             [
-                'company_id'           => null,
-                'name'                 => 'Hesaplar Arası Para Transferleri',
-                'type'                 => null,
-                'parent_id'            => null,
-                'sort_order'           => 0,
-                'is_active'            => true,
+                'company_id' => null,
+                'name' => 'Hesaplar Arası Para Transferleri',
+                'type' => null,
+                'parent_id' => null,
+                'sort_order' => 0,
+                'is_active' => true,
                 'is_disable_in_report' => true,
-                'is_sacrifice_type'    => false,
-                'contact_type'         => null,
-                'color'                => null,
-                'description'          => null,
-                'created_user_id'      => null,
+                'is_sacrifice_type' => false,
+                'contact_type' => null,
+                'color' => null,
+                'description' => null,
+                'created_user_id' => null,
             ]
         );
 
@@ -35,18 +35,18 @@ class SafeTransactionCategorySeeder extends Seeder
         SafeTransactionCategory::updateOrCreate(
             ['id' => 2],
             [
-                'company_id'           => null,
-                'name'                 => 'Döviz İşlemleri',
-                'type'                 => null,
-                'parent_id'            => null,
-                'sort_order'           => 0,
-                'is_active'            => true,
+                'company_id' => null,
+                'name' => 'Döviz İşlemleri',
+                'type' => null,
+                'parent_id' => null,
+                'sort_order' => 0,
+                'is_active' => true,
                 'is_disable_in_report' => true,
-                'is_sacrifice_type'    => false,
-                'contact_type'         => null,
-                'color'                => null,
-                'description'          => null,
-                'created_user_id'      => null,
+                'is_sacrifice_type' => false,
+                'contact_type' => null,
+                'color' => null,
+                'description' => null,
+                'created_user_id' => null,
             ]
         );
 
@@ -54,18 +54,18 @@ class SafeTransactionCategorySeeder extends Seeder
         SafeTransactionCategory::updateOrCreate(
             ['id' => 3],
             [
-                'company_id'           => null,
-                'name'                 => 'ATAMA BEKLİYOR',
-                'type'                 => null,
-                'parent_id'            => null,
-                'sort_order'           => 0,
-                'is_active'            => true,
+                'company_id' => null,
+                'name' => 'ATAMA BEKLİYOR',
+                'type' => null,
+                'parent_id' => null,
+                'sort_order' => 0,
+                'is_active' => true,
                 'is_disable_in_report' => false,
-                'is_sacrifice_type'    => false,
-                'contact_type'         => null,
-                'color'                => null,
-                'description'          => null,
-                'created_user_id'      => null,
+                'is_sacrifice_type' => false,
+                'contact_type' => null,
+                'color' => null,
+                'description' => null,
+                'created_user_id' => null,
             ]
         );
 
@@ -73,18 +73,18 @@ class SafeTransactionCategorySeeder extends Seeder
         SafeTransactionCategory::updateOrCreate(
             ['id' => 4],
             [
-                'company_id'           => null,
-                'name'                 => 'Açılış',
-                'type'                 => 'income',
-                'parent_id'            => null,
-                'sort_order'           => 0,
-                'is_active'            => false,
+                'company_id' => null,
+                'name' => 'Açılış',
+                'type' => 'income',
+                'parent_id' => null,
+                'sort_order' => 0,
+                'is_active' => false,
                 'is_disable_in_report' => false,
-                'is_sacrifice_type'    => false,
-                'contact_type'         => null,
-                'color'                => null,
-                'description'          => null,
-                'created_user_id'      => null,
+                'is_sacrifice_type' => false,
+                'contact_type' => null,
+                'color' => null,
+                'description' => null,
+                'created_user_id' => null,
             ]
         );
 
@@ -92,27 +92,27 @@ class SafeTransactionCategorySeeder extends Seeder
         SafeTransactionCategory::updateOrCreate(
             ['id' => 5],
             [
-                'company_id'           => null,
-                'name'                 => 'Bağış',
-                'type'                 => 'income',
-                'parent_id'            => null,
-                'sort_order'           => 10,
-                'is_active'            => true,
+                'company_id' => null,
+                'name' => 'Bağış',
+                'type' => 'income',
+                'parent_id' => null,
+                'sort_order' => 10,
+                'is_active' => true,
                 'is_disable_in_report' => false,
-                'is_sacrifice_type'    => false,
-                'contact_type'         => null,
-                'color'                => null,
-                'description'          => null,
-                'created_user_id'      => null,
+                'is_sacrifice_type' => false,
+                'contact_type' => null,
+                'color' => null,
+                'description' => null,
+                'created_user_id' => null,
             ]
         );
 
         // Bağış alt kategorileri (ID 6-11, parent_id: 5)
         $donationSubcategories = [
-            6  => 'Genel',
-            7  => 'Zekat',
-            8  => 'Fitre',
-            9  => 'Kumanya',
+            6 => 'Genel',
+            7 => 'Zekat',
+            8 => 'Fitre',
+            9 => 'Kumanya',
             10 => 'Öğrenci İftarı',
             11 => 'Hatim',
         ];
@@ -123,18 +123,18 @@ class SafeTransactionCategorySeeder extends Seeder
             SafeTransactionCategory::updateOrCreate(
                 ['id' => $id],
                 [
-                    'company_id'           => null,
-                    'name'                 => $name,
-                    'type'                 => 'income',
-                    'parent_id'            => 5,
-                    'sort_order'           => $sortOrder,
-                    'is_active'            => true,
+                    'company_id' => null,
+                    'name' => $name,
+                    'type' => 'income',
+                    'parent_id' => 5,
+                    'sort_order' => $sortOrder,
+                    'is_active' => true,
                     'is_disable_in_report' => false,
-                    'is_sacrifice_type'    => false,
-                    'contact_type'         => 'donor',
-                    'color'                => null,
-                    'description'          => null,
-                    'created_user_id'      => null,
+                    'is_sacrifice_type' => false,
+                    'contact_type' => 'donor',
+                    'color' => null,
+                    'description' => null,
+                    'created_user_id' => null,
                 ]
             );
         }
@@ -143,18 +143,18 @@ class SafeTransactionCategorySeeder extends Seeder
         SafeTransactionCategory::updateOrCreate(
             ['id' => 12],
             [
-                'company_id'           => null,
-                'name'                 => 'Kurban',
-                'type'                 => 'income',
-                'parent_id'            => null,
-                'sort_order'           => 20,
-                'is_active'            => true,
+                'company_id' => null,
+                'name' => 'Kurban',
+                'type' => 'income',
+                'parent_id' => null,
+                'sort_order' => 20,
+                'is_active' => true,
                 'is_disable_in_report' => false,
-                'is_sacrifice_type'    => false,
-                'contact_type'         => null,
-                'color'                => null,
-                'description'          => null,
-                'created_user_id'      => null,
+                'is_sacrifice_type' => false,
+                'contact_type' => null,
+                'color' => null,
+                'description' => null,
+                'created_user_id' => null,
             ]
         );
 
@@ -172,18 +172,18 @@ class SafeTransactionCategorySeeder extends Seeder
             SafeTransactionCategory::updateOrCreate(
                 ['id' => $id],
                 [
-                    'company_id'           => null,
-                    'name'                 => $name,
-                    'type'                 => 'income',
-                    'parent_id'            => 12,
-                    'sort_order'           => $sortOrder,
-                    'is_active'            => true,
+                    'company_id' => null,
+                    'name' => $name,
+                    'type' => 'income',
+                    'parent_id' => 12,
+                    'sort_order' => $sortOrder,
+                    'is_active' => true,
                     'is_disable_in_report' => false,
-                    'is_sacrifice_type'    => true,
-                    'contact_type'         => 'donor',
-                    'color'                => null,
-                    'description'          => null,
-                    'created_user_id'      => null,
+                    'is_sacrifice_type' => true,
+                    'contact_type' => 'donor',
+                    'color' => null,
+                    'description' => null,
+                    'created_user_id' => null,
                 ]
             );
         }
@@ -218,18 +218,18 @@ class SafeTransactionCategorySeeder extends Seeder
             SafeTransactionCategory::updateOrCreate(
                 ['name' => $category['name']],
                 [
-                    'company_id'           => null,
-                    'name'                 => $category['name'],
-                    'type'                 => $category['type'],
-                    'parent_id'            => null,
-                    'sort_order'           => $category['sort_order'],
-                    'is_active'            => true,
+                    'company_id' => null,
+                    'name' => $category['name'],
+                    'type' => $category['type'],
+                    'parent_id' => null,
+                    'sort_order' => $category['sort_order'],
+                    'is_active' => true,
                     'is_disable_in_report' => false,
-                    'is_sacrifice_type'    => false,
-                    'contact_type'         => null,
-                    'color'                => null,
-                    'description'          => null,
-                    'created_user_id'      => null,
+                    'is_sacrifice_type' => false,
+                    'contact_type' => null,
+                    'color' => null,
+                    'description' => null,
+                    'created_user_id' => null,
                 ]
             );
         }

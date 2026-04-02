@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class KurbanSeason extends Model
 {
-    use HasFactory, SoftDeletes, LogsActivity;
+    use HasFactory, LogsActivity, SoftDeletes;
 
     protected $fillable = [
         'company_id',
@@ -32,17 +32,17 @@ class KurbanSeason extends Model
     protected function casts(): array
     {
         return [
-            'year'                   => 'integer',
-            'price_try'              => 'decimal:2',
-            'price_eur'              => 'decimal:2',
+            'year' => 'integer',
+            'price_try' => 'decimal:2',
+            'price_eur' => 'decimal:2',
             'default_livestock_type' => LivestockType::class,
-            'is_active'              => 'boolean',
+            'is_active' => 'boolean',
         ];
     }
 
     protected static function booted(): void
     {
-        static::addGlobalScope(new CompanyScope());
+        static::addGlobalScope(new CompanyScope);
     }
 
     public function company(): BelongsTo

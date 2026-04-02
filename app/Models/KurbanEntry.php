@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class KurbanEntry extends Model
 {
-    use HasFactory, SoftDeletes, LogsActivity;
+    use HasFactory, LogsActivity, SoftDeletes;
 
     protected $fillable = [
         'company_id',
@@ -33,15 +33,15 @@ class KurbanEntry extends Model
     protected function casts(): array
     {
         return [
-            'is_paid'        => 'boolean',
-            'paid_date'      => 'date',
+            'is_paid' => 'boolean',
+            'paid_date' => 'date',
             'livestock_type' => LivestockType::class,
         ];
     }
 
     protected static function booted(): void
     {
-        static::addGlobalScope(new CompanyScope());
+        static::addGlobalScope(new CompanyScope);
     }
 
     public function company(): BelongsTo
@@ -77,7 +77,7 @@ class KurbanEntry extends Model
     protected function fullName(): Attribute
     {
         return Attribute::make(
-            get: fn() => $this->contact?->first_name . ' ' . $this->contact?->last_name,
+            get: fn () => $this->contact?->first_name.' '.$this->contact?->last_name,
         );
     }
 }

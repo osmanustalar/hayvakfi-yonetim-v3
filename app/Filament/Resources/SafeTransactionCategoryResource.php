@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources;
 
+use App\Enums\TransactionType;
 use App\Filament\Resources\SafeTransactionCategoryResource\Pages;
 use App\Models\SafeTransactionCategory;
 use Filament\Actions\BulkActionGroup;
@@ -53,7 +54,7 @@ class SafeTransactionCategoryResource extends Resource
             ->withoutGlobalScopes()
             ->where(function (Builder $q): void {
                 $q->whereNull('company_id')
-                  ->orWhere('company_id', session('active_company_id'));
+                    ->orWhere('company_id', session('active_company_id'));
             })
             ->orderByRaw('COALESCE(parent_id, id), parent_id IS NULL DESC, sort_order');
     }
@@ -75,7 +76,7 @@ class SafeTransactionCategoryResource extends Resource
                                     ->label('Tür')
                                     ->nullable()
                                     ->options([
-                                        'income'  => 'Gelir',
+                                        'income' => 'Gelir',
                                         'expense' => 'Gider',
                                     ]),
 
@@ -87,7 +88,7 @@ class SafeTransactionCategoryResource extends Resource
                                             ->whereNull('parent_id')
                                             ->where(function ($q): void {
                                                 $q->whereNull('company_id')
-                                                  ->orWhere('company_id', session('active_company_id'));
+                                                    ->orWhere('company_id', session('active_company_id'));
                                             })
                                             ->pluck('name', 'id')
                                     ),
@@ -96,9 +97,9 @@ class SafeTransactionCategoryResource extends Resource
                                     ->label('Kişi Tipi')
                                     ->nullable()
                                     ->options([
-                                        'donor'         => 'Bağışçı',
+                                        'donor' => 'Bağışçı',
                                         'aid_recipient' => 'Yardım Alan',
-                                        'student'       => 'Öğrenci',
+                                        'student' => 'Öğrenci',
                                     ]),
 
                                 TextInput::make('color')
@@ -143,8 +144,7 @@ class SafeTransactionCategoryResource extends Resource
             ->columns([
                 TextColumn::make('name')
                     ->label('Kategori Adı')
-                    ->formatStateUsing(fn ($state, SafeTransactionCategory $record) =>
-                        $record->parent_id ? '└── ' . $state : $state
+                    ->formatStateUsing(fn ($state, SafeTransactionCategory $record) => $record->parent_id ? '└── '.$state : $state
                     )
                     ->searchable()
                     ->sortable(),
@@ -152,15 +152,15 @@ class SafeTransactionCategoryResource extends Resource
                 TextColumn::make('type')
                     ->label('Tür')
                     ->badge()
-                    ->color(fn ($state) => match ($state instanceof \App\Enums\TransactionType ? $state->value : $state) {
-                        'income'  => 'success',
+                    ->color(fn ($state) => match ($state instanceof TransactionType ? $state->value : $state) {
+                        'income' => 'success',
                         'expense' => 'danger',
-                        default   => 'gray',
+                        default => 'gray',
                     })
-                    ->formatStateUsing(fn ($state) => match ($state instanceof \App\Enums\TransactionType ? $state->value : $state) {
-                        'income'  => 'Gelir',
+                    ->formatStateUsing(fn ($state) => match ($state instanceof TransactionType ? $state->value : $state) {
+                        'income' => 'Gelir',
                         'expense' => 'Gider',
-                        default   => '—',
+                        default => '—',
                     }),
 
                 IconColumn::make('is_active')
@@ -185,7 +185,7 @@ class SafeTransactionCategoryResource extends Resource
                 SelectFilter::make('type')
                     ->label('Tür')
                     ->options([
-                        'income'  => 'Gelir',
+                        'income' => 'Gelir',
                         'expense' => 'Gider',
                     ]),
 
@@ -213,10 +213,10 @@ class SafeTransactionCategoryResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListSafeTransactionCategories::route('/'),
+            'index' => Pages\ListSafeTransactionCategories::route('/'),
             'create' => Pages\CreateSafeTransactionCategory::route('/create'),
-            'view'   => Pages\ViewSafeTransactionCategory::route('/{record}'),
-            'edit'   => Pages\EditSafeTransactionCategory::route('/{record}/edit'),
+            'view' => Pages\ViewSafeTransactionCategory::route('/{record}'),
+            'edit' => Pages\EditSafeTransactionCategory::route('/{record}/edit'),
         ];
     }
 }

@@ -11,7 +11,7 @@ class SafeGroupRepository extends BaseRepository
 {
     public function __construct()
     {
-        parent::__construct(new SafeGroup());
+        parent::__construct(new SafeGroup);
     }
 
     public function allActive(): Collection

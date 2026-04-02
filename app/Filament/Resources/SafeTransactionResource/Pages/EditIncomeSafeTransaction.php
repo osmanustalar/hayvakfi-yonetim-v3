@@ -11,17 +11,19 @@ use App\Helpers\Helper;
 use App\Models\KurbanEntry;
 use App\Models\Safe;
 use App\Models\SafeTransaction;
+use App\Models\User;
 use App\Services\SafeTransactionService;
 use App\Traits\HasSafeIncomeFormHelpers;
 use Filament\Actions\DeleteAction;
 use Filament\Forms;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\EditRecord;
 use Filament\Schemas;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
-use Filament\Notifications\Notification;
-use Filament\Resources\Pages\EditRecord;
 use Filament\Support\RawJs;
+use Illuminate\Database\Eloquent\Model;
 
 class EditIncomeSafeTransaction extends EditRecord
 {
@@ -47,8 +49,7 @@ class EditIncomeSafeTransaction extends EditRecord
         }
     }
 
-
-    public function mount(int | string $record): void
+    public function mount(int|string $record): void
     {
         parent::mount($record);
 
@@ -89,7 +90,7 @@ class EditIncomeSafeTransaction extends EditRecord
                                                     ->with('currency')
                                                     ->get()
                                                     ->mapWithKeys(fn (Safe $s): array => [
-                                                        $s->id => $s->name . ' (' . ($s->currency?->symbol ?? '') . ')',
+                                                        $s->id => $s->name.' ('.($s->currency?->symbol ?? '').')',
                                                     ])
                                                     ->toArray()
                                             )
@@ -103,7 +104,7 @@ class EditIncomeSafeTransaction extends EditRecord
                                                     return null;
                                                 }
 
-                                                return 'Mevcut Bakiye: ' . number_format((float) $safe->balance, 2, ',', '.') . ' ' . ($safe->currency?->symbol ?? 'TRY');
+                                                return 'Mevcut Bakiye: '.number_format((float) $safe->balance, 2, ',', '.').' '.($safe->currency?->symbol ?? 'TRY');
                                             }),
 
                                         Forms\Components\TextInput::make('total_amount_display')
@@ -112,7 +113,7 @@ class EditIncomeSafeTransaction extends EditRecord
                                             ->dehydrated(false)
                                             ->prefix(fn (Get $get): string => Safe::find($get('safe_id'))?->currency?->symbol ?? 'TRY')
                                             ->helperText(fn (): ?string => $this->record->integration_id !== null
-                                                ? 'API işlemi: Toplam tutar ' . Helper::formatShowMoney($this->record->total_amount) . ' olarak sabit kalmalıdır. Kalemler arasında dağıtabilirsiniz.'
+                                                ? 'API işlemi: Toplam tutar '.Helper::formatShowMoney($this->record->total_amount).' olarak sabit kalmalıdır. Kalemler arasında dağıtabilirsiniz.'
                                                 : null
                                             ),
                                     ]),
@@ -227,7 +228,7 @@ class EditIncomeSafeTransaction extends EditRecord
                                 Forms\Components\Select::make('reference_user_id')
                                     ->label('İşlemi Yapan Kullanıcı')
                                     ->options(function (): array {
-                                        return \App\Models\User::query()
+                                        return User::query()
                                             ->whereHas('companies', fn ($q) => $q->where('company_id', session('active_company_id')))
                                             ->orderBy('name')
                                             ->get()
@@ -270,10 +271,11 @@ class EditIncomeSafeTransaction extends EditRecord
     protected function mutateFormDataBeforeFill(array $data): array
     {
         $data['total_amount_display'] = Helper::formatShowMoney($this->record->total_amount ?? 0);
+
         return $data;
     }
 
-    protected function handleRecordUpdate(\Illuminate\Database\Eloquent\Model $record, array $data): \Illuminate\Database\Eloquent\Model
+    protected function handleRecordUpdate(Model $record, array $data): Model
     {
         /** @var SafeTransaction $transaction */
         $transaction = $record;
@@ -286,25 +288,25 @@ class EditIncomeSafeTransaction extends EditRecord
         if (empty($formItems)) {
             $items = $transaction->items->map(fn ($item): array => [
                 'transaction_category_id' => $item->transaction_category_id,
-                'amount'                  => (float) $item->amount,
+                'amount' => (float) $item->amount,
             ])->toArray();
         } else {
             $items = collect($formItems)->map(fn (array $item): array => [
                 'transaction_category_id' => (int) $item['transaction_category_id'],
-                'amount'                  => (float) ($item['amount'] ?? 0),
+                'amount' => (float) ($item['amount'] ?? 0),
             ])->toArray();
         }
 
         $newTotal = collect($items)->sum(fn ($i): float => $i['amount']);
 
         $payload = [
-            'type'               => TransactionType::INCOME->value,
-            'total_amount'       => $newTotal,
-            'process_date'       => $transaction->integration_id !== null ? $transaction->process_date : $data['process_date'],
-            'description'        => $data['description'] ?? null,
-            'reference_user_id'  => $data['reference_user_id'] ?? null,
-            'contact_id'         => $data['contact_id'] ?? null,
-            'items'              => $items,
+            'type' => TransactionType::INCOME->value,
+            'total_amount' => $newTotal,
+            'process_date' => $transaction->integration_id !== null ? $transaction->process_date : $data['process_date'],
+            'description' => $data['description'] ?? null,
+            'reference_user_id' => $data['reference_user_id'] ?? null,
+            'contact_id' => $data['contact_id'] ?? null,
+            'items' => $items,
         ];
 
         try {
@@ -313,9 +315,9 @@ class EditIncomeSafeTransaction extends EditRecord
                 $originalTotal = (float) $transaction->total_amount;
                 if (abs($newTotal - $originalTotal) > 0.001) {
                     throw new \RuntimeException(
-                        "API\'den geri verilen işlemlerde toplam tutar değiştirilemez. " .
-                        "Orijinal tutar: " . number_format($originalTotal, 2, ',', '.') .
-                        ", Yeni tutar: " . number_format($newTotal, 2, ',', '.')
+                        "API\'den geri verilen işlemlerde toplam tutar değiştirilemez. ".
+                        'Orijinal tutar: '.number_format($originalTotal, 2, ',', '.').
+                        ', Yeni tutar: '.number_format($newTotal, 2, ',', '.')
                     );
                 }
             }
@@ -332,9 +334,9 @@ class EditIncomeSafeTransaction extends EditRecord
                 $kurbanEntry = KurbanEntry::find($kurbanEntryId);
                 if ($kurbanEntry !== null) {
                     $kurbanEntry->update([
-                        'is_paid'              => true,
-                        'paid_date'            => $payload['process_date'],
-                        'safe_transaction_id'  => $updatedTransaction->id,
+                        'is_paid' => true,
+                        'paid_date' => $payload['process_date'],
+                        'safe_transaction_id' => $updatedTransaction->id,
                     ]);
                 }
             }
@@ -368,5 +370,4 @@ class EditIncomeSafeTransaction extends EditRecord
     {
         return $this->getResource()::getUrl('index');
     }
-
 }

@@ -15,7 +15,7 @@ class CompanyScope implements Scope
         $companyId = session('active_company_id');
 
         if ($companyId) {
-            $builder->where($model->getTable() . '.company_id', $companyId);
+            $builder->where($model->getTable().'.company_id', $companyId);
         }
     }
 }

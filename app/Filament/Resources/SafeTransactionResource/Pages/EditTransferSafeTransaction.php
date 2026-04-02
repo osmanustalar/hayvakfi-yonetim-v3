@@ -12,11 +12,11 @@ use App\Models\SafeTransaction;
 use App\Services\SafeTransactionService;
 use Filament\Actions\DeleteAction;
 use Filament\Forms;
-use Filament\Schemas;
-use Filament\Schemas\Components\Utilities\Set;
-use Filament\Schemas\Schema;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
+use Filament\Schemas;
+use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Model;
 
 class EditTransferSafeTransaction extends EditRecord
 {
@@ -48,7 +48,7 @@ class EditTransferSafeTransaction extends EditRecord
         }
     }
 
-    public function mount(int | string $record): void
+    public function mount(int|string $record): void
     {
         parent::mount($record);
 
@@ -91,19 +91,19 @@ class EditTransferSafeTransaction extends EditRecord
                             ->schema([
                                 Forms\Components\Select::make('target_safe_display')
                                     ->label('Giriş Yapılan Kasa (Hedef)')
-                                    ->options(fn () => $this->targetSafe ? [$this->targetSafe->id => $this->targetSafe->name . ' (' . ($this->targetSafe->currency?->symbol ?? '') . ')'] : [])
+                                    ->options(fn () => $this->targetSafe ? [$this->targetSafe->id => $this->targetSafe->name.' ('.($this->targetSafe->currency?->symbol ?? '').')'] : [])
                                     ->default(fn () => $this->targetSafe?->id)
                                     ->disabled()
                                     ->prefixIcon('heroicon-o-building-library')
-                                    ->helperText(fn () => $this->targetSafe ? 'Mevcut Bakiye: ' . number_format((float) $this->targetSafe->balance, 2, ',', '.') . ' ' . ($this->targetSafe->currency?->symbol ?? 'TRY') : ''),
+                                    ->helperText(fn () => $this->targetSafe ? 'Mevcut Bakiye: '.number_format((float) $this->targetSafe->balance, 2, ',', '.').' '.($this->targetSafe->currency?->symbol ?? 'TRY') : ''),
 
                                 Forms\Components\Select::make('source_safe_display')
                                     ->label('Çıkış Yapılan Kasa (Kaynak)')
-                                    ->options(fn () => $this->sourceSafe ? [$this->sourceSafe->id => $this->sourceSafe->name . ' (' . ($this->sourceSafe->currency?->symbol ?? '') . ')'] : [])
+                                    ->options(fn () => $this->sourceSafe ? [$this->sourceSafe->id => $this->sourceSafe->name.' ('.($this->sourceSafe->currency?->symbol ?? '').')'] : [])
                                     ->default(fn () => $this->sourceSafe?->id)
                                     ->disabled()
                                     ->prefixIcon('heroicon-o-building-library')
-                                    ->helperText(fn () => $this->sourceSafe ? 'Mevcut Bakiye: ' . number_format((float) $this->sourceSafe->balance, 2, ',', '.') . ' ' . ($this->sourceSafe->currency?->symbol ?? 'TRY') : ''),
+                                    ->helperText(fn () => $this->sourceSafe ? 'Mevcut Bakiye: '.number_format((float) $this->sourceSafe->balance, 2, ',', '.').' '.($this->sourceSafe->currency?->symbol ?? 'TRY') : ''),
                             ]),
 
                         Schemas\Components\Grid::make(1)
@@ -153,7 +153,7 @@ class EditTransferSafeTransaction extends EditRecord
             ->columns(1);
     }
 
-    protected function handleRecordUpdate(\Illuminate\Database\Eloquent\Model $record, array $data): \Illuminate\Database\Eloquent\Model
+    protected function handleRecordUpdate(Model $record, array $data): Model
     {
         /** @var SafeTransaction $transaction */
         $transaction = $record;
@@ -164,9 +164,9 @@ class EditTransferSafeTransaction extends EditRecord
             $newAmount = (float) $data['amount'];
             if (abs($newAmount - $originalAmount) > 0.001) {
                 throw new \RuntimeException(
-                    "API\'den geri verilen işlemlerde tutarlar değiştirilemez. " .
-                    "Orijinal tutar: " . number_format($originalAmount, 2, ',', '.') .
-                    ", Yeni tutar: " . number_format($newAmount, 2, ',', '.')
+                    "API\'den geri verilen işlemlerde tutarlar değiştirilemez. ".
+                    'Orijinal tutar: '.number_format($originalAmount, 2, ',', '.').
+                    ', Yeni tutar: '.number_format($newAmount, 2, ',', '.')
                 );
             }
         }
@@ -177,10 +177,10 @@ class EditTransferSafeTransaction extends EditRecord
         }
 
         $payload = [
-            'amount'             => (float) $data['amount'],
-            'process_date'       => $transaction->integration_id !== null ? $transaction->process_date : $data['process_date'],
-            'description'        => $data['description'] ?? null,
-            'reference_user_id'  => $data['reference_user_id'] ?? null,
+            'amount' => (float) $data['amount'],
+            'process_date' => $transaction->integration_id !== null ? $transaction->process_date : $data['process_date'],
+            'description' => $data['description'] ?? null,
+            'reference_user_id' => $data['reference_user_id'] ?? null,
         ];
 
         try {

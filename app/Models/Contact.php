@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Contact extends Model
 {
-    use HasFactory, SoftDeletes, LogsActivity;
+    use HasFactory, LogsActivity, SoftDeletes;
 
     protected $fillable = [
         'first_name',
@@ -33,10 +33,10 @@ class Contact extends Model
     protected function casts(): array
     {
         return [
-            'is_donor'         => 'boolean',
+            'is_donor' => 'boolean',
             'is_aid_recipient' => 'boolean',
-            'is_student'       => 'boolean',
-            'birth_date'       => 'date',
+            'is_student' => 'boolean',
+            'birth_date' => 'date',
         ];
     }
 

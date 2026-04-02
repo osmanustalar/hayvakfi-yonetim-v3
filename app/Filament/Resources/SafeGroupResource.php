@@ -134,10 +134,10 @@ class SafeGroupResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListSafeGroups::route('/'),
+            'index' => Pages\ListSafeGroups::route('/'),
             'create' => Pages\CreateSafeGroup::route('/create'),
-            'view'   => Pages\ViewSafeGroup::route('/{record}'),
-            'edit'   => Pages\EditSafeGroup::route('/{record}/edit'),
+            'view' => Pages\ViewSafeGroup::route('/{record}'),
+            'edit' => Pages\EditSafeGroup::route('/{record}/edit'),
         ];
     }
 }

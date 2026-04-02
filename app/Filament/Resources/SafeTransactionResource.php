@@ -11,11 +11,12 @@ use App\Models\Currency;
 use App\Models\Safe;
 use App\Models\SafeGroup;
 use App\Models\SafeTransaction;
+use App\Models\SafeTransactionCategory;
 use App\Models\User;
+use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
-use Filament\Actions\Action;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
@@ -59,20 +60,20 @@ class SafeTransactionResource extends Resource
         return parent::getGlobalSearchEloquentQuery()
             ->with('safe')
             ->where(function (Builder $query): Builder {
-                return $query->where('description', 'like', '%' . request('q') . '%')
-                    ->orWhereHas('safe', fn (Builder $q): Builder => $q->where('name', 'like', '%' . request('q') . '%'));
+                return $query->where('description', 'like', '%'.request('q').'%')
+                    ->orWhereHas('safe', fn (Builder $q): Builder => $q->where('name', 'like', '%'.request('q').'%'));
             });
     }
 
-    public static function getTableQuery(): \Illuminate\Database\Eloquent\Builder
+    public static function getTableQuery(): Builder
     {
         return parent::getTableQuery()
             ->with([
                 'items' => fn ($q) => $q->with([
                     'category' => fn ($q) => $q->withoutGlobalScopes()->with([
-                        'parent' => fn ($q) => $q->withoutGlobalScopes()
-                    ])
-                ])
+                        'parent' => fn ($q) => $q->withoutGlobalScopes(),
+                    ]),
+                ]),
             ], 'safe.currency', 'currency', 'referenceUser');
     }
 
@@ -104,25 +105,25 @@ class SafeTransactionResource extends Resource
                                 $categoryLabel = $item->category->name;
                                 // Eğer alt kategoriyse, üst kategorisini de ekle
                                 if ($item->category->parent_id && $item->category->parent) {
-                                    $categoryLabel = $item->category->parent->name . ' > ' . $categoryLabel;
+                                    $categoryLabel = $item->category->parent->name.' > '.$categoryLabel;
                                 }
 
-                                if (!in_array($categoryLabel, $categories)) {
+                                if (! in_array($categoryLabel, $categories)) {
                                     $categories[] = $categoryLabel;
                                 }
                             }
                         }
 
-                        return !empty($categories) ? implode(', ', $categories) : '—';
+                        return ! empty($categories) ? implode(', ', $categories) : '—';
                     }),
 
                 TextColumn::make('type')
                     ->label('Tür')
                     ->badge()
                     ->color(fn ($state): string => match (true) {
-                        $state instanceof TransactionType && $state === TransactionType::INCOME  => 'success',
+                        $state instanceof TransactionType && $state === TransactionType::INCOME => 'success',
                         $state instanceof TransactionType && $state === TransactionType::EXPENSE => 'danger',
-                        (string) $state === 'income'  => 'success',
+                        (string) $state === 'income' => 'success',
                         (string) $state === 'expense' => 'danger',
                         default => 'gray',
                     })
@@ -189,11 +190,11 @@ class SafeTransactionResource extends Resource
                         $indicators = [];
 
                         if ($data['from_date'] ?? null) {
-                            $indicators['from_date'] = 'Başlangıç: ' . date('d.m.Y', strtotime($data['from_date']));
+                            $indicators['from_date'] = 'Başlangıç: '.date('d.m.Y', strtotime($data['from_date']));
                         }
 
                         if ($data['to_date'] ?? null) {
-                            $indicators['to_date'] = 'Bitiş: ' . date('d.m.Y', strtotime($data['to_date']));
+                            $indicators['to_date'] = 'Bitiş: '.date('d.m.Y', strtotime($data['to_date']));
                         }
 
                         return $indicators;
@@ -224,11 +225,11 @@ class SafeTransactionResource extends Resource
                         $indicators = [];
 
                         if ($data['min_amount'] ?? null) {
-                            $indicators['min_amount'] = 'Min: ' . $data['min_amount'];
+                            $indicators['min_amount'] = 'Min: '.$data['min_amount'];
                         }
 
                         if ($data['max_amount'] ?? null) {
-                            $indicators['max_amount'] = 'Max: ' . $data['max_amount'];
+                            $indicators['max_amount'] = 'Max: '.$data['max_amount'];
                         }
 
                         return $indicators;
@@ -243,11 +244,10 @@ class SafeTransactionResource extends Resource
                 SelectFilter::make('safe_group_id')
                     ->label('Kasa Grubu')
                     ->options(fn (): array => SafeGroup::query()->pluck('name', 'id')->toArray())
-                    ->query(fn (Builder $query, array $data): Builder =>
-                        $query->when(
-                            $data['value'] ?? null,
-                            fn (Builder $q): Builder => $q->whereHas('safe', fn (Builder $subQ) => $subQ->where('safe_group_id', $data['value']))
-                        )
+                    ->query(fn (Builder $query, array $data): Builder => $query->when(
+                        $data['value'] ?? null,
+                        fn (Builder $q): Builder => $q->whereHas('safe', fn (Builder $subQ) => $subQ->where('safe_group_id', $data['value']))
+                    )
                     )
                     ->searchable(),
 
@@ -265,7 +265,7 @@ class SafeTransactionResource extends Resource
                 SelectFilter::make('type')
                     ->label('İşlem Türü')
                     ->options([
-                        'income'  => 'Giriş',
+                        'income' => 'Giriş',
                         'expense' => 'Çıkış',
                     ]),
 
@@ -278,18 +278,17 @@ class SafeTransactionResource extends Resource
 
                 SelectFilter::make('category')
                     ->label('Kategori')
-                    ->options(fn (): array => \App\Models\SafeTransactionCategory::query()
+                    ->options(fn (): array => SafeTransactionCategory::query()
                         ->forActiveCompany()
                         ->where('is_active', true)
                         ->orderBy('sort_order')
                         ->pluck('name', 'id')
                         ->toArray()
                     )
-                    ->query(fn (Builder $query, array $data): Builder =>
-                        $query->when(
-                            $data['value'] ?? null,
-                            fn (Builder $q): Builder => $q->whereHas('items', fn (Builder $subQ) => $subQ->where('transaction_category_id', $data['value']))
-                        )
+                    ->query(fn (Builder $query, array $data): Builder => $query->when(
+                        $data['value'] ?? null,
+                        fn (Builder $q): Builder => $q->whereHas('items', fn (Builder $subQ) => $subQ->where('transaction_category_id', $data['value']))
+                    )
                     )
                     ->searchable(),
 
@@ -311,7 +310,7 @@ class SafeTransactionResource extends Resource
                     ->label('Düzenle')
                     ->icon('heroicon-o-pencil')
                     ->url(function (SafeTransaction $record): ?string {
-                        $type          = $record->type instanceof TransactionType
+                        $type = $record->type instanceof TransactionType
                             ? $record->type->value
                             : (string) $record->type;
                         $operationType = $record->operation_type instanceof OperationType
@@ -360,16 +359,16 @@ class SafeTransactionResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'           => Pages\ListSafeTransactions::route('/'),
-            'create-income'   => Pages\CreateIncomeSafeTransaction::route('/create/income/{safe_id}'),
-            'create-expense'  => Pages\CreateExpenseSafeTransaction::route('/create/expense/{safe_id}'),
+            'index' => Pages\ListSafeTransactions::route('/'),
+            'create-income' => Pages\CreateIncomeSafeTransaction::route('/create/income/{safe_id}'),
+            'create-expense' => Pages\CreateExpenseSafeTransaction::route('/create/expense/{safe_id}'),
             'create-exchange' => Pages\CreateExchangeSafeTransaction::route('/create/exchange/{safe_id}'),
             'create-transfer' => Pages\CreateTransferSafeTransaction::route('/create/transfer/{safe_id}'),
-            'edit-income'     => Pages\EditIncomeSafeTransaction::route('/{record}/edit/income'),
-            'edit-expense'    => Pages\EditExpenseSafeTransaction::route('/{record}/edit/expense'),
-            'edit-exchange'   => Pages\EditExchangeSafeTransaction::route('/{record}/edit/exchange'),
-            'edit-transfer'   => Pages\EditTransferSafeTransaction::route('/{record}/edit/transfer'),
-            'assign'          => Pages\AssignSafeTransaction::route('/{record}/assign'),
+            'edit-income' => Pages\EditIncomeSafeTransaction::route('/{record}/edit/income'),
+            'edit-expense' => Pages\EditExpenseSafeTransaction::route('/{record}/edit/expense'),
+            'edit-exchange' => Pages\EditExchangeSafeTransaction::route('/{record}/edit/exchange'),
+            'edit-transfer' => Pages\EditTransferSafeTransaction::route('/{record}/edit/transfer'),
+            'assign' => Pages\AssignSafeTransaction::route('/{record}/assign'),
         ];
     }
 }

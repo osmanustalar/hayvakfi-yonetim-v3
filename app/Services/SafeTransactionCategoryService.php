@@ -33,7 +33,8 @@ class SafeTransactionCategoryService
     public function create(array $data): SafeTransactionCategory
     {
         $data['created_user_id'] = auth()->id();
-        $data['company_id']      = session('active_company_id');
+        $data['company_id'] = session('active_company_id');
+
         /** @var SafeTransactionCategory */
         return $this->repository->create($data);
     }
@@ -41,6 +42,7 @@ class SafeTransactionCategoryService
     public function update(SafeTransactionCategory $category, array $data): SafeTransactionCategory
     {
         $this->repository->update($category->id, $data);
+
         /** @var SafeTransactionCategory */
         return $category->fresh();
     }

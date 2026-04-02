@@ -11,7 +11,7 @@ class SafeTransactionRepository extends BaseRepository
 {
     public function __construct()
     {
-        parent::__construct(new SafeTransaction());
+        parent::__construct(new SafeTransaction);
     }
 
     public function findBySafeAndIntegrationId(int $safeId, string $integrationId): ?SafeTransaction
@@ -45,9 +45,9 @@ class SafeTransactionRepository extends BaseRepository
      * Transfer: transaction_date eşleşmeli + tutar aynı olmalı
      * Exchange: transaction_date eşleşmeli + tutar farklı olabilir
      *
-     * @param SafeTransaction $source Kaynak işlem
-     * @param Safe $targetSafe Hedef kasa
-     * @param string $operationType 'transfer' veya 'exchange'
+     * @param  SafeTransaction  $source  Kaynak işlem
+     * @param  Safe  $targetSafe  Hedef kasa
+     * @param  string  $operationType  'transfer' veya 'exchange'
      * @return Collection<int, SafeTransaction>
      */
     public function getEligibleTransactions(

@@ -10,15 +10,16 @@ use App\Filament\Resources\SafeTransactionResource;
 use App\Helpers\Helper;
 use App\Models\KurbanEntry;
 use App\Models\Safe;
+use App\Models\User;
 use App\Services\SafeTransactionService;
 use App\Traits\HasSafeIncomeFormHelpers;
 use Filament\Forms;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\CreateRecord;
 use Filament\Schemas;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
-use Filament\Notifications\Notification;
-use Filament\Resources\Pages\CreateRecord;
 use Filament\Support\RawJs;
 use Illuminate\Database\Eloquent\Model;
 
@@ -81,10 +82,10 @@ class CreateIncomeSafeTransaction extends CreateRecord
                                             ->options(
                                                 Safe::query()
                                                     ->where('is_active', true)
-                                                    ->whereHas('safeGroup', fn($q) => $q->where('is_api_integration', false))
+                                                    ->whereHas('safeGroup', fn ($q) => $q->where('is_api_integration', false))
                                                     ->get()
                                                     ->mapWithKeys(fn (Safe $s): array => [
-                                                        $s->id => $s->name . ' (' . ($s->currency?->symbol ?? '') . ')',
+                                                        $s->id => $s->name.' ('.($s->currency?->symbol ?? '').')',
                                                     ])
                                                     ->toArray()
                                             )
@@ -99,7 +100,7 @@ class CreateIncomeSafeTransaction extends CreateRecord
                                                     return null;
                                                 }
 
-                                                return 'Mevcut Bakiye: ' . number_format((float) $safe->balance, 2, ',', '.') . ' ' . ($safe->currency?->symbol ?? 'TRY');
+                                                return 'Mevcut Bakiye: '.number_format((float) $safe->balance, 2, ',', '.').' '.($safe->currency?->symbol ?? 'TRY');
                                             }),
 
                                         Forms\Components\TextInput::make('total_amount_display')
@@ -218,7 +219,7 @@ class CreateIncomeSafeTransaction extends CreateRecord
                                 Forms\Components\Select::make('reference_user_id')
                                     ->label('İşlemi Yapan Kullanıcı')
                                     ->options(function (): array {
-                                        return \App\Models\User::query()
+                                        return User::query()
                                             ->whereHas('companies', fn ($q) => $q->where('company_id', session('active_company_id')))
                                             ->orderBy('name')
                                             ->get()
@@ -265,19 +266,19 @@ class CreateIncomeSafeTransaction extends CreateRecord
 
         $items = collect($data['items'] ?? [])->map(fn (array $item): array => [
             'transaction_category_id' => (int) $item['transaction_category_id'],
-            'amount'                  => (float) ($item['amount'] ?? 0),
+            'amount' => (float) ($item['amount'] ?? 0),
         ])->toArray();
         $total = collect($items)->sum(fn ($i): float => $i['amount']);
 
         $payload = [
-            'safe_id'            => $this->safeId,
-            'type'               => TransactionType::INCOME->value,
-            'total_amount'       => $total,
-            'process_date'       => $data['process_date'],
-            'description'        => $data['description'] ?? null,
-            'reference_user_id'  => $data['reference_user_id'] ?? null,
-            'contact_id'         => $data['contact_id'] ?? null,
-            'items'              => $items,
+            'safe_id' => $this->safeId,
+            'type' => TransactionType::INCOME->value,
+            'total_amount' => $total,
+            'process_date' => $data['process_date'],
+            'description' => $data['description'] ?? null,
+            'reference_user_id' => $data['reference_user_id'] ?? null,
+            'contact_id' => $data['contact_id'] ?? null,
+            'items' => $items,
         ];
 
         try {
@@ -288,9 +289,9 @@ class CreateIncomeSafeTransaction extends CreateRecord
                 $kurbanEntry = KurbanEntry::find($kurbanEntryId);
                 if ($kurbanEntry !== null) {
                     $kurbanEntry->update([
-                        'is_paid'              => true,
-                        'paid_date'            => $data['process_date'],
-                        'safe_transaction_id'  => $transaction->id,
+                        'is_paid' => true,
+                        'paid_date' => $data['process_date'],
+                        'safe_transaction_id' => $transaction->id,
                     ]);
                 }
             }
@@ -311,5 +312,4 @@ class CreateIncomeSafeTransaction extends CreateRecord
     {
         return $this->getResource()::getUrl('index');
     }
-
 }

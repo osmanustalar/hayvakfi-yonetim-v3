@@ -12,6 +12,7 @@ use Filament\Resources\Pages\ListRecords;
 class ListCurrencies extends ListRecords
 {
     use CustomTablePaginationTrait;
+
     protected static string $resource = CurrencyResource::class;
 
     protected function getHeaderActions(): array

@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class KurbanList extends Model
 {
-    use HasFactory, SoftDeletes, LogsActivity;
+    use HasFactory, LogsActivity, SoftDeletes;
 
     protected $fillable = [
         'company_id',
@@ -34,7 +34,7 @@ class KurbanList extends Model
 
     protected static function booted(): void
     {
-        static::addGlobalScope(new CompanyScope());
+        static::addGlobalScope(new CompanyScope);
     }
 
     public function company(): BelongsTo
@@ -64,7 +64,7 @@ class KurbanList extends Model
 
     public function getTitle(): string
     {
-        return ($this->season?->year ?? '?') . ' - ' . ($this->collector?->name ?? '?');
+        return ($this->season?->year ?? '?').' - '.($this->collector?->name ?? '?');
     }
 
     public function __toString(): string

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\CompanyResource\Pages;
 
 use App\Filament\Resources\CompanyResource;
+use App\Models\Company;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
@@ -15,7 +16,7 @@ class ViewCompany extends ViewRecord
 
     public function getTitle(): string
     {
-        /** @var \App\Models\Company $record */
+        /** @var Company $record */
         $record = $this->record;
 
         return $record->name;

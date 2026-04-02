@@ -19,7 +19,7 @@ class ShieldSeeder extends Seeder
     {
         // Generate permissions and policies
         Artisan::call('shield:generate', [
-            '--all'   => true,
+            '--all' => true,
             '--panel' => 'admin',
         ]);
 

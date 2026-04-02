@@ -21,7 +21,7 @@ trait ResolvesCategories
 
         $v1Category = $this->v1()->table('transaction_categories')->where('id', $v1CategoryId)->first();
 
-        if (!$v1Category) {
+        if (! $v1Category) {
             return null;
         }
 
@@ -89,6 +89,7 @@ trait ResolvesCategories
         if ($categoryName === 'Diğer') {
             $mappedCategoryName = $type === TransactionType::INCOME ? 'Diğer Gelir' : 'Diğer Gider';
             $v3Category = $this->v3()->table('safe_transaction_categories')->where('name', $mappedCategoryName)->first();
+
             return $v3Category?->id;
         }
 

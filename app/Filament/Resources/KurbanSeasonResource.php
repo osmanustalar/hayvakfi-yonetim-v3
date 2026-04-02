@@ -100,7 +100,7 @@ class KurbanSeasonResource extends Resource
             ->columns([
                 TextColumn::make('year')
                     ->label('Sezon')
-                    ->formatStateUsing(fn ($state) => $state . ' Yılı Kurban Sezonu')
+                    ->formatStateUsing(fn ($state) => $state.' Yılı Kurban Sezonu')
                     ->sortable()
                     ->searchable(),
 
@@ -111,7 +111,7 @@ class KurbanSeasonResource extends Resource
                     ->color(fn ($state) => match ($state instanceof LivestockType ? $state : null) {
                         LivestockType::SMALL => 'warning',
                         LivestockType::LARGE => 'success',
-                        default             => 'gray',
+                        default => 'gray',
                     }),
 
                 TextColumn::make('price_try')
@@ -159,10 +159,10 @@ class KurbanSeasonResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListKurbanSeasons::route('/'),
+            'index' => Pages\ListKurbanSeasons::route('/'),
             'create' => Pages\CreateKurbanSeason::route('/create'),
-            'view'   => Pages\ViewKurbanSeason::route('/{record}'),
-            'edit'   => Pages\EditKurbanSeason::route('/{record}/edit'),
+            'view' => Pages\ViewKurbanSeason::route('/{record}'),
+            'edit' => Pages\EditKurbanSeason::route('/{record}/edit'),
         ];
     }
 }

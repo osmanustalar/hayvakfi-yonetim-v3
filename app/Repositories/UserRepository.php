@@ -10,7 +10,7 @@ class UserRepository extends BaseRepository
 {
     public function __construct()
     {
-        parent::__construct(new User());
+        parent::__construct(new User);
     }
 
     public function findByPhone(string $phone): ?User
@@ -29,12 +29,12 @@ class UserRepository extends BaseRepository
 
         // +90 ile başlıyorsa 0 ile başlayan formata çevir
         if (str_starts_with($phone, '+90')) {
-            $phone = '0' . substr($phone, 3);
+            $phone = '0'.substr($phone, 3);
         }
 
         // 0 ile başlamıyorsa 0 ekle (90 ile başlıyorsa)
         if (str_starts_with($phone, '90') && ! str_starts_with($phone, '0')) {
-            $phone = '0' . substr($phone, 2);
+            $phone = '0'.substr($phone, 2);
         }
 
         return $phone;

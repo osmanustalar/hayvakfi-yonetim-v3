@@ -49,7 +49,7 @@ class CompanyResource extends Resource
         /** @var Company $record */
         return [
             'Vergi No' => $record->tax_number ?? '-',
-            'Telefon'  => $record->phone ?? '-',
+            'Telefon' => $record->phone ?? '-',
         ];
     }
 
@@ -151,10 +151,10 @@ class CompanyResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListCompanies::route('/'),
+            'index' => Pages\ListCompanies::route('/'),
             'create' => Pages\CreateCompany::route('/create'),
-            'view'   => Pages\ViewCompany::route('/{record}'),
-            'edit'   => Pages\EditCompany::route('/{record}/edit'),
+            'view' => Pages\ViewCompany::route('/{record}'),
+            'edit' => Pages\EditCompany::route('/{record}/edit'),
         ];
     }
 }

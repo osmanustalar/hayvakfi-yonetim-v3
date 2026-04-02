@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\CurrencyResource\Pages;
 
 use App\Filament\Resources\CurrencyResource;
+use App\Models\Currency;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
@@ -15,10 +16,10 @@ class ViewCurrency extends ViewRecord
 
     public function getTitle(): string
     {
-        /** @var \App\Models\Currency $record */
+        /** @var Currency $record */
         $record = $this->record;
 
-        return $record->name . ' (' . $record->symbol . ')';
+        return $record->name.' ('.$record->symbol.')';
     }
 
     protected function getHeaderActions(): array

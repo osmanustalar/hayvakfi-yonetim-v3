@@ -23,7 +23,7 @@ class UserSeeder extends Seeder
         // Get HAYVAKFI company
         $company = Company::where('name', 'HAYVAKFI')->first();
 
-        if (!$company) {
+        if (! $company) {
             throw new \RuntimeException('HAYVAKFI company not found. Run CompanySeeder first.');
         }
 
@@ -31,11 +31,11 @@ class UserSeeder extends Seeder
         $osmanUser = User::updateOrCreate(
             ['phone' => '05556260886'],
             [
-                'name'               => 'Osman Ustalar',
-                'phone'              => '05556260886',
-                'password'           => Hash::make('test'),
-                'can_login'          => true,
-                'is_active'          => true,
+                'name' => 'Osman Ustalar',
+                'phone' => '05556260886',
+                'password' => Hash::make('test'),
+                'can_login' => true,
+                'is_active' => true,
                 'default_company_id' => $company->id,
             ]
         );
@@ -44,7 +44,7 @@ class UserSeeder extends Seeder
         $osmanUser->companies()->syncWithoutDetaching([$company->id]);
 
         // Assign super_admin role
-        if (!$osmanUser->hasRole('super_admin')) {
+        if (! $osmanUser->hasRole('super_admin')) {
             $osmanUser->assignRole('super_admin');
         }
 
@@ -52,11 +52,11 @@ class UserSeeder extends Seeder
         $ismailUser = User::updateOrCreate(
             ['phone' => '05525567790'],
             [
-                'name'               => 'İsmail Türk',
-                'phone'              => '05525567790',
-                'password'           => Hash::make('0000'),
-                'can_login'          => true,
-                'is_active'          => true,
+                'name' => 'İsmail Türk',
+                'phone' => '05525567790',
+                'password' => Hash::make('0000'),
+                'can_login' => true,
+                'is_active' => true,
                 'default_company_id' => $company->id,
             ]
         );

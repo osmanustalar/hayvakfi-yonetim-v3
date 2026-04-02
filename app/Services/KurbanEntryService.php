@@ -20,11 +20,11 @@ class KurbanEntryService
 
     public function create(array $data): KurbanEntry
     {
-        $data['company_id']      = (int) session('active_company_id');
+        $data['company_id'] = (int) session('active_company_id');
         $data['created_user_id'] = auth()->id();
 
         // Telefon varsa ve contact_id yoksa, otomatik contact bul
-        if (!empty($data['phone']) && empty($data['contact_id'])) {
+        if (! empty($data['phone']) && empty($data['contact_id'])) {
             $contact = $this->contactService->findByPhone($data['phone']);
             if ($contact !== null) {
                 $data['contact_id'] = $contact->id;
@@ -52,7 +52,7 @@ class KurbanEntryService
     /**
      * Birden fazla kurban kaydını toplu olarak ödendi işaretle.
      *
-     * @param array<int> $entryIds
+     * @param  array<int>  $entryIds
      * @param array{
      *   safe_id: int,
      *   process_date: string,
@@ -73,35 +73,35 @@ class KurbanEntryService
             foreach ($entries as $entry) {
                 // 1. SafeTransaction oluştur (INCOME, kategori: kurban tipi)
                 $transaction = $this->transactionService->create([
-                    'safe_id'           => $paymentData['safe_id'],
-                    'type'              => TransactionType::INCOME->value,
-                    'total_amount'      => $entry->safeTransaction?->total_amount ?? 0,
-                    'process_date'      => $paymentData['process_date'],
-                    'description'       => $paymentData['description']
+                    'safe_id' => $paymentData['safe_id'],
+                    'type' => TransactionType::INCOME->value,
+                    'total_amount' => $entry->safeTransaction?->total_amount ?? 0,
+                    'process_date' => $paymentData['process_date'],
+                    'description' => $paymentData['description']
                         ?? "Kurban bağışı - {$entry->full_name} - {$entry->sacrificeCategory?->name}",
-                    'contact_id'        => $entry->contact_id,
+                    'contact_id' => $entry->contact_id,
                     'reference_user_id' => $paymentData['reference_user_id'] ?? null,
-                    'items'             => [
+                    'items' => [
                         [
                             'transaction_category_id' => $entry->sacrifice_category_id,
-                            'amount'                  => $entry->safeTransaction?->total_amount ?? 0,
+                            'amount' => $entry->safeTransaction?->total_amount ?? 0,
                         ],
                     ],
                 ]);
 
                 // 2. Contact oluştur/güncelle (telefon varsa ve contact yoksa)
-                if ($entry->contact_id === null && !empty($entry->phone)) {
+                if ($entry->contact_id === null && ! empty($entry->phone)) {
                     $contact = $this->contactService->findByPhone($entry->phone);
                     if ($contact === null) {
                         $contact = $this->contactService->create([
                             'first_name' => $entry->first_name,
-                            'last_name'  => $entry->last_name,
-                            'phone'      => $entry->phone,
-                            'is_donor'   => true,
+                            'last_name' => $entry->last_name,
+                            'phone' => $entry->phone,
+                            'is_donor' => true,
                         ]);
                     } else {
                         // Mevcut kişiyi bağışçı olarak işaretle
-                        if (!$contact->is_donor) {
+                        if (! $contact->is_donor) {
                             $contact->update(['is_donor' => true]);
                         }
                     }
@@ -111,9 +111,9 @@ class KurbanEntryService
 
                 // 3. Kurban kaydını ödendi olarak işaretle
                 $entry->update([
-                    'is_paid'              => true,
-                    'paid_date'            => $paymentData['process_date'],
-                    'safe_transaction_id'  => $transaction->id,
+                    'is_paid' => true,
+                    'paid_date' => $paymentData['process_date'],
+                    'safe_transaction_id' => $transaction->id,
                 ]);
 
                 $updatedEntries->push($entry->refresh());

@@ -39,10 +39,10 @@ trait HasSafeIncomeFormHelpers
             if ($children->isEmpty()) {
                 $options[$parent->id] = $parent->name;
             } else {
-                $options[$parent->id] = $parent->name . ' (Seçilemez)';
+                $options[$parent->id] = $parent->name.' (Seçilemez)';
 
                 foreach ($children as $child) {
-                    $options[$child->id] = '⤷ ' . $parent->name . ' → ' . $child->name;
+                    $options[$child->id] = '⤷ '.$parent->name.' → '.$child->name;
                 }
             }
         }
@@ -59,9 +59,9 @@ trait HasSafeIncomeFormHelpers
 
         if (! $skipTypeFilter) {
             $column = match ($contactType) {
-                ContactType::DONOR         => 'is_donor',
+                ContactType::DONOR => 'is_donor',
                 ContactType::AID_RECIPIENT => 'is_aid_recipient',
-                ContactType::STUDENT       => 'is_student',
+                ContactType::STUDENT => 'is_student',
             };
 
             $query->where($column, true);
@@ -71,9 +71,9 @@ trait HasSafeIncomeFormHelpers
             ->with('region')
             ->get()
             ->mapWithKeys(fn (Contact $c): array => [
-                $c->id => $c->first_name . ' ' . $c->last_name
-                    . ($c->phone ? ' — ' . $c->phone : '')
-                    . ($c->region ? ' — ' . $c->region->name : ''),
+                $c->id => $c->first_name.' '.$c->last_name
+                    .($c->phone ? ' — '.$c->phone : '')
+                    .($c->region ? ' — '.$c->region->name : ''),
             ])
             ->toArray();
     }
@@ -82,7 +82,7 @@ trait HasSafeIncomeFormHelpers
     {
         if ($state === null) {
             $this->activeContactType = null;
-            $this->activeIsKurban    = false;
+            $this->activeIsKurban = false;
 
             return;
         }
@@ -105,6 +105,6 @@ trait HasSafeIncomeFormHelpers
         }
 
         $this->activeContactType = $category->contact_type;
-        $this->activeIsKurban    = (bool) ($category->is_sacrifice_type ?? false);
+        $this->activeIsKurban = (bool) ($category->is_sacrifice_type ?? false);
     }
 }

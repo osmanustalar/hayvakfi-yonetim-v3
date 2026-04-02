@@ -11,7 +11,7 @@ class SafeTransactionCategoryRepository extends BaseRepository
 {
     public function __construct()
     {
-        parent::__construct(new SafeTransactionCategory());
+        parent::__construct(new SafeTransactionCategory);
     }
 
     public function forActiveCompany(): Collection
@@ -19,7 +19,7 @@ class SafeTransactionCategoryRepository extends BaseRepository
         return $this->model->newQuery()
             ->where(function ($q): void {
                 $q->whereNull('company_id')
-                  ->orWhere('company_id', session('active_company_id'));
+                    ->orWhere('company_id', session('active_company_id'));
             })
             ->orderBy('sort_order')
             ->get();
@@ -31,7 +31,7 @@ class SafeTransactionCategoryRepository extends BaseRepository
             ->with('children')
             ->where(function ($q): void {
                 $q->whereNull('company_id')
-                  ->orWhere('company_id', session('active_company_id'));
+                    ->orWhere('company_id', session('active_company_id'));
             })
             ->whereNull('parent_id')
             ->orderBy('sort_order')

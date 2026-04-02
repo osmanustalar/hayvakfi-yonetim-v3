@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Collection;
 class SafeService
 {
     public function __construct(
-        private readonly SafeRepository      $repository,
+        private readonly SafeRepository $repository,
         private readonly SafeGroupRepository $groupRepository,
     ) {}
 
@@ -32,7 +32,8 @@ class SafeService
     public function create(array $data): Safe
     {
         $data['created_user_id'] = auth()->id();
-        $data['company_id']      = session('active_company_id');
+        $data['company_id'] = session('active_company_id');
+
         /** @var Safe */
         return $this->repository->create($data);
     }
@@ -40,6 +41,7 @@ class SafeService
     public function update(Safe $safe, array $data): Safe
     {
         $this->repository->update($safe->id, $data);
+
         /** @var Safe */
         return $safe->fresh();
     }

@@ -11,7 +11,7 @@ class KurbanSeasonRepository extends BaseRepository
 {
     public function __construct()
     {
-        parent::__construct(new KurbanSeason());
+        parent::__construct(new KurbanSeason);
     }
 
     /**

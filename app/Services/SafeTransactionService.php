@@ -18,10 +18,10 @@ use Illuminate\Support\Facades\DB;
 class SafeTransactionService
 {
     public function __construct(
-        private readonly SafeTransactionRepository     $repository,
+        private readonly SafeTransactionRepository $repository,
         private readonly SafeTransactionItemRepository $itemRepository,
-        private readonly SafeService                   $safeService,
-        private readonly SafeRepository                $safeRepository,
+        private readonly SafeService $safeService,
+        private readonly SafeRepository $safeRepository,
     ) {}
 
     /**
@@ -69,7 +69,7 @@ class SafeTransactionService
     public function createTransfer(array $data): array
     {
         return DB::transaction(function () use ($data): array {
-            $companyId   = (int) session('active_company_id');
+            $companyId = (int) session('active_company_id');
             $createdById = auth()->id();
 
             $sourceSafe = $this->safeRepository->findWithLock($data['source_safe_id']);
@@ -78,16 +78,16 @@ class SafeTransactionService
             // Kaynak: gider
             /** @var SafeTransaction */
             $sourceTransaction = $this->repository->create([
-                'company_id'            => $companyId,
-                'safe_id'               => $sourceSafe->id,
-                'type'                  => TransactionType::EXPENSE->value,
-                'operation_type'        => OperationType::TRANSFER->value,
-                'total_amount'          => $data['amount'],
-                'target_safe_id'        => $data['target_safe_id'],
-                'process_date'          => $data['process_date'],
-                'description'           => $data['description'] ?? null,
-                'reference_user_id'     => $data['reference_user_id'] ?? null,
-                'created_user_id'       => $createdById,
+                'company_id' => $companyId,
+                'safe_id' => $sourceSafe->id,
+                'type' => TransactionType::EXPENSE->value,
+                'operation_type' => OperationType::TRANSFER->value,
+                'total_amount' => $data['amount'],
+                'target_safe_id' => $data['target_safe_id'],
+                'process_date' => $data['process_date'],
+                'description' => $data['description'] ?? null,
+                'reference_user_id' => $data['reference_user_id'] ?? null,
+                'created_user_id' => $createdById,
                 'balance_after_created' => 0,
             ]);
 
@@ -99,17 +99,17 @@ class SafeTransactionService
             // Hedef: gelir
             /** @var SafeTransaction */
             $targetTransaction = $this->repository->create([
-                'company_id'            => $companyId,
-                'safe_id'               => $targetSafe->id,
-                'type'                  => TransactionType::INCOME->value,
-                'operation_type'        => OperationType::TRANSFER->value,
-                'total_amount'          => $data['amount'],
-                'target_safe_id'        => $sourceSafe->id,
+                'company_id' => $companyId,
+                'safe_id' => $targetSafe->id,
+                'type' => TransactionType::INCOME->value,
+                'operation_type' => OperationType::TRANSFER->value,
+                'total_amount' => $data['amount'],
+                'target_safe_id' => $sourceSafe->id,
                 'target_transaction_id' => $sourceTransaction->id,
-                'process_date'          => $data['process_date'],
-                'description'           => $data['description'] ?? null,
-                'reference_user_id'     => $data['reference_user_id'] ?? null,
-                'created_user_id'       => $createdById,
+                'process_date' => $data['process_date'],
+                'description' => $data['description'] ?? null,
+                'reference_user_id' => $data['reference_user_id'] ?? null,
+                'created_user_id' => $createdById,
                 'balance_after_created' => 0,
             ]);
 
@@ -137,13 +137,13 @@ class SafeTransactionService
      */
     public function createExchange(array $data): SafeTransaction
     {
-        $data['total_amount']   = round((float) $data['amount'] * (float) $data['exchange_rate'], 4);
+        $data['total_amount'] = round((float) $data['amount'] * (float) $data['exchange_rate'], 4);
         $data['operation_type'] = OperationType::EXCHANGE->value;
 
         // Döviz kategorisi ID 2 ile persist (items override)
         $data['items'] = [[
             'transaction_category_id' => 2,
-            'amount'                  => $data['total_amount'],
+            'amount' => $data['total_amount'],
         ]];
 
         // amount alanı tablodan kaldırıldığı için veriyi çıkar
@@ -172,7 +172,7 @@ class SafeTransactionService
     public function createExchangeTransfer(array $data): array
     {
         return DB::transaction(function () use ($data): array {
-            $companyId   = (int) session('active_company_id');
+            $companyId = (int) session('active_company_id');
             $createdById = auth()->id();
 
             $sourceSafe = $this->safeRepository->findWithLock($data['source_safe_id']);
@@ -181,18 +181,18 @@ class SafeTransactionService
             // Kaynak: gider (çıkış kasa)
             /** @var SafeTransaction */
             $sourceTransaction = $this->repository->create([
-                'company_id'            => $companyId,
-                'safe_id'               => $sourceSafe->id,
-                'type'                  => TransactionType::EXPENSE->value,
-                'operation_type'        => OperationType::EXCHANGE->value,
-                'total_amount'          => $data['source_amount'],
-                'currency_id'           => $sourceSafe->currency_id,
-                'item_rate'             => $data['item_rate'],
-                'target_safe_id'        => $data['target_safe_id'],
-                'process_date'          => $data['process_date'],
-                'description'           => $data['description'] ?? null,
-                'reference_user_id'     => $data['reference_user_id'] ?? null,
-                'created_user_id'       => $createdById,
+                'company_id' => $companyId,
+                'safe_id' => $sourceSafe->id,
+                'type' => TransactionType::EXPENSE->value,
+                'operation_type' => OperationType::EXCHANGE->value,
+                'total_amount' => $data['source_amount'],
+                'currency_id' => $sourceSafe->currency_id,
+                'item_rate' => $data['item_rate'],
+                'target_safe_id' => $data['target_safe_id'],
+                'process_date' => $data['process_date'],
+                'description' => $data['description'] ?? null,
+                'reference_user_id' => $data['reference_user_id'] ?? null,
+                'created_user_id' => $createdById,
                 'balance_after_created' => 0,
             ]);
 
@@ -204,19 +204,19 @@ class SafeTransactionService
             // Hedef: gelir (giriş kasa)
             /** @var SafeTransaction */
             $targetTransaction = $this->repository->create([
-                'company_id'            => $companyId,
-                'safe_id'               => $targetSafe->id,
-                'type'                  => TransactionType::INCOME->value,
-                'operation_type'        => OperationType::EXCHANGE->value,
-                'total_amount'          => $data['target_amount'],
-                'currency_id'           => $targetSafe->currency_id,
-                'item_rate'             => $data['item_rate'],
-                'target_safe_id'        => $sourceSafe->id,
+                'company_id' => $companyId,
+                'safe_id' => $targetSafe->id,
+                'type' => TransactionType::INCOME->value,
+                'operation_type' => OperationType::EXCHANGE->value,
+                'total_amount' => $data['target_amount'],
+                'currency_id' => $targetSafe->currency_id,
+                'item_rate' => $data['item_rate'],
+                'target_safe_id' => $sourceSafe->id,
                 'target_transaction_id' => $sourceTransaction->id,
-                'process_date'          => $data['process_date'],
-                'description'           => $data['description'] ?? null,
-                'reference_user_id'     => $data['reference_user_id'] ?? null,
-                'created_user_id'       => $createdById,
+                'process_date' => $data['process_date'],
+                'description' => $data['description'] ?? null,
+                'reference_user_id' => $data['reference_user_id'] ?? null,
+                'created_user_id' => $createdById,
                 'balance_after_created' => 0,
             ]);
 
@@ -246,15 +246,15 @@ class SafeTransactionService
     public function update(SafeTransaction $transaction, array $data): SafeTransaction
     {
         return DB::transaction(function () use ($transaction, $data): SafeTransaction {
-            $safe    = $this->safeRepository->findWithLock($transaction->safe_id);
+            $safe = $this->safeRepository->findWithLock($transaction->safe_id);
             $oldType = $transaction->type->value;
-            $oldAmount  = (float) $transaction->total_amount;
-            $newAmount  = (float) $data['total_amount'];
-            $newType    = (string) $data['type'];
-            $items      = $data['items'] ?? [];
+            $oldAmount = (float) $transaction->total_amount;
+            $newAmount = (float) $data['total_amount'];
+            $newType = (string) $data['type'];
+            $items = $data['items'] ?? [];
 
             // Split doğrulama
-            if (!empty($items)) {
+            if (! empty($items)) {
                 $itemsSum = collect($items)->sum(fn ($i) => (float) $i['amount']);
                 if (abs($itemsSum - $newAmount) > 0.0001) {
                     throw new SplitAmountMismatchException(
@@ -282,7 +282,7 @@ class SafeTransactionService
             $this->repository->update($transaction->id, $updateData);
 
             // Items güncelle
-            if (!empty($items)) {
+            if (! empty($items)) {
                 $companyId = (int) session('active_company_id');
                 // Mevcut items sil
                 $transaction->items()->delete();
@@ -321,17 +321,17 @@ class SafeTransactionService
             $targetSafe->increment('balance', $newAmount);
 
             $this->repository->update($sourceTransaction->id, [
-                'total_amount'       => $newAmount,
-                'process_date'       => $data['process_date'],
-                'description'        => $data['description'] ?? null,
-                'reference_user_id'  => $data['reference_user_id'] ?? null,
+                'total_amount' => $newAmount,
+                'process_date' => $data['process_date'],
+                'description' => $data['description'] ?? null,
+                'reference_user_id' => $data['reference_user_id'] ?? null,
             ]);
 
             $this->repository->update($targetTransaction->id, [
-                'total_amount'       => $newAmount,
-                'process_date'       => $data['process_date'],
-                'description'        => $data['description'] ?? null,
-                'reference_user_id'  => $data['reference_user_id'] ?? null,
+                'total_amount' => $newAmount,
+                'process_date' => $data['process_date'],
+                'description' => $data['description'] ?? null,
+                'reference_user_id' => $data['reference_user_id'] ?? null,
             ]);
 
             // Items güncelle
@@ -370,7 +370,7 @@ class SafeTransactionService
             $oldTargetAmount = (float) $targetTransaction->total_amount;
             $newSourceAmount = (float) $data['source_amount'];
             $newTargetAmount = (float) $data['target_amount'];
-            $newRate         = (float) $data['item_rate'];
+            $newRate = (float) $data['item_rate'];
 
             // Eski bakiyeleri geri al
             $sourceSafe->increment('balance', $oldSourceAmount);
@@ -382,19 +382,19 @@ class SafeTransactionService
             $targetSafe->increment('balance', $newTargetAmount);
 
             $this->repository->update($sourceTransaction->id, [
-                'total_amount'       => $newSourceAmount,
-                'item_rate'          => $newRate,
-                'process_date'       => $data['process_date'],
-                'description'        => $data['description'] ?? null,
-                'reference_user_id'  => $data['reference_user_id'] ?? null,
+                'total_amount' => $newSourceAmount,
+                'item_rate' => $newRate,
+                'process_date' => $data['process_date'],
+                'description' => $data['description'] ?? null,
+                'reference_user_id' => $data['reference_user_id'] ?? null,
             ]);
 
             $this->repository->update($targetTransaction->id, [
-                'total_amount'       => $newTargetAmount,
-                'item_rate'          => $newRate,
-                'process_date'       => $data['process_date'],
-                'description'        => $data['description'] ?? null,
-                'reference_user_id'  => $data['reference_user_id'] ?? null,
+                'total_amount' => $newTargetAmount,
+                'item_rate' => $newRate,
+                'process_date' => $data['process_date'],
+                'description' => $data['description'] ?? null,
+                'reference_user_id' => $data['reference_user_id'] ?? null,
             ]);
 
             // Items güncelle
@@ -424,7 +424,7 @@ class SafeTransactionService
      * - Döviz + API kasa: liste (tutar farklı olabilir)
      * - Döviz + Normal: manuel kur+tutar
      *
-     * @param SafeTransaction $source Kaynak işlem (INCOME veya EXPENSE olabilir)
+     * @param  SafeTransaction  $source  Kaynak işlem (INCOME veya EXPENSE olabilir)
      * @param array{
      *   operation_choice: string,
      *   target_safe_id: int,
@@ -436,13 +436,13 @@ class SafeTransactionService
     public function assignTransaction(SafeTransaction $source, array $data): void
     {
         DB::transaction(function () use ($source, $data): void {
-            $companyId     = (int) session('active_company_id');
+            $companyId = (int) session('active_company_id');
             $operationType = $data['operation_choice'];
-            $targetSafeId  = (int) $data['target_safe_id'];
-            $targetSafe    = Safe::with('safeGroup')->findOrFail($targetSafeId);
-            $isTargetApi   = $targetSafe->safeGroup->is_api_integration;
-            $categoryId    = $operationType === 'transfer' ? 1 : 2;
-            $opEnum        = $operationType === 'transfer'
+            $targetSafeId = (int) $data['target_safe_id'];
+            $targetSafe = Safe::with('safeGroup')->findOrFail($targetSafeId);
+            $isTargetApi = $targetSafe->safeGroup->is_api_integration;
+            $categoryId = $operationType === 'transfer' ? 1 : 2;
+            $opEnum = $operationType === 'transfer'
                 ? OperationType::TRANSFER
                 : OperationType::EXCHANGE;
 
@@ -459,15 +459,15 @@ class SafeTransactionService
 
                 // Kaynak kaydı güncelle
                 $source->update([
-                    'operation_type'        => $opEnum,
-                    'target_safe_id'        => $targetSafe->id,
+                    'operation_type' => $opEnum,
+                    'target_safe_id' => $targetSafe->id,
                     'target_transaction_id' => $target->id,
                 ]);
 
                 // Hedef kaydı güncelle
                 $target->update([
-                    'operation_type'        => $opEnum,
-                    'target_safe_id'        => $source->safe_id,
+                    'operation_type' => $opEnum,
+                    'target_safe_id' => $source->safe_id,
                     'target_transaction_id' => $source->id,
                 ]);
 
@@ -487,17 +487,17 @@ class SafeTransactionService
             $sourceAmount = (float) $source->total_amount;
             $targetAmount = $sourceAmount;  // Transfer: aynı
             $exchangeRate = null;
-            $itemRate     = null;
+            $itemRate = null;
 
             // Döviz işlemi ise exchange_rate/target_amount zorunlu
             if ($operationType === 'exchange') {
-                if (!isset($data['exchange_rate'], $data['target_amount'])) {
+                if (! isset($data['exchange_rate'], $data['target_amount'])) {
                     throw new \Exception('Döviz işleminde exchange_rate ve target_amount gereklidir.');
                 }
 
                 $exchangeRate = (float) $data['exchange_rate'];
                 $targetAmount = (float) $data['target_amount'];  // Form'dan manual giriş
-                $itemRate     = $exchangeRate;
+                $itemRate = $exchangeRate;
             }
 
             // Hedef safe bakiye lock + güncelleme
@@ -514,31 +514,31 @@ class SafeTransactionService
             // Yeni hedef transaction oluştur
             /** @var SafeTransaction */
             $target = $this->repository->create([
-                'company_id'            => $companyId,
-                'safe_id'               => $targetSafe->id,
-                'type'                  => $targetType,
-                'operation_type'        => $opEnum,
-                'total_amount'          => $targetAmount,
-                'currency_id'           => $operationType === 'exchange' ? $targetSafe->currency_id : $source->currency_id,
-                'exchange_rate'         => $exchangeRate,
-                'item_rate'             => $itemRate,
-                'target_safe_id'        => $source->safe_id,
+                'company_id' => $companyId,
+                'safe_id' => $targetSafe->id,
+                'type' => $targetType,
+                'operation_type' => $opEnum,
+                'total_amount' => $targetAmount,
+                'currency_id' => $operationType === 'exchange' ? $targetSafe->currency_id : $source->currency_id,
+                'exchange_rate' => $exchangeRate,
+                'item_rate' => $itemRate,
+                'target_safe_id' => $source->safe_id,
                 'target_transaction_id' => $source->id,
-                'process_date'          => $source->process_date,
-                'transaction_date'      => $source->transaction_date,
-                'description'           => $source->description,
-                'reference_user_id'     => $source->reference_user_id,
-                'created_user_id'       => auth()->id(),
+                'process_date' => $source->process_date,
+                'transaction_date' => $source->transaction_date,
+                'description' => $source->description,
+                'reference_user_id' => $source->reference_user_id,
+                'created_user_id' => auth()->id(),
                 'balance_after_created' => $targetSafeLocked->fresh()->balance,
             ]);
 
             // Kaynak kaydı güncelle (linking + exchange fields)
             $source->update([
-                'operation_type'        => $opEnum,
-                'target_safe_id'        => $targetSafe->id,
+                'operation_type' => $opEnum,
+                'target_safe_id' => $targetSafe->id,
                 'target_transaction_id' => $target->id,
-                'exchange_rate'         => $exchangeRate,
-                'item_rate'             => $itemRate,
+                'exchange_rate' => $exchangeRate,
+                'item_rate' => $itemRate,
             ]);
 
             // Kaynak items kategorisini güncelle
@@ -569,13 +569,13 @@ class SafeTransactionService
     {
         return DB::transaction(function () use ($data): SafeTransaction {
             $companyId = (int) session('active_company_id');
-            $safe      = Safe::findOrFail($data['safe_id']);
+            $safe = Safe::findOrFail($data['safe_id']);
 
             $totalAmount = (float) $data['total_amount'];
-            $items       = $data['items'] ?? [];
+            $items = $data['items'] ?? [];
 
             // Split doğrulama
-            if (!empty($items)) {
+            if (! empty($items)) {
                 $itemsSum = collect($items)->sum(fn ($i) => (float) $i['amount']);
                 if (abs($itemsSum - $totalAmount) > 0.0001) {
                     throw new SplitAmountMismatchException(
@@ -590,9 +590,9 @@ class SafeTransactionService
             }
 
             $transactionData = array_merge($data, [
-                'company_id'            => $companyId,
-                'currency_id'           => $data['currency_id'] ?? $safe->currency_id,
-                'created_user_id'       => auth()->id(),
+                'company_id' => $companyId,
+                'currency_id' => $data['currency_id'] ?? $safe->currency_id,
+                'created_user_id' => auth()->id(),
                 'balance_after_created' => 0,
             ]);
             unset($transactionData['items']);
@@ -607,7 +607,7 @@ class SafeTransactionService
             $transaction->update(['balance_after_created' => $safe->fresh()->balance]);
 
             // Items kaydet
-            if (!empty($items)) {
+            if (! empty($items)) {
                 $this->itemRepository->createMany($transaction->id, $companyId, $items);
             }
 

@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SafeTransactionCategory extends Model
 {
-    use HasFactory, SoftDeletes, LogsActivity;
+    use HasFactory, LogsActivity, SoftDeletes;
 
     protected $fillable = [
         'company_id',
@@ -36,12 +36,12 @@ class SafeTransactionCategory extends Model
     protected function casts(): array
     {
         return [
-            'type'                 => TransactionType::class,
-            'contact_type'        => ContactType::class,
-            'is_active'           => 'boolean',
+            'type' => TransactionType::class,
+            'contact_type' => ContactType::class,
+            'is_active' => 'boolean',
             'is_disable_in_report' => 'boolean',
-            'is_sacrifice_type'    => 'boolean',
-            'sort_order'          => 'integer',
+            'is_sacrifice_type' => 'boolean',
+            'sort_order' => 'integer',
         ];
     }
 
@@ -71,7 +71,7 @@ class SafeTransactionCategory extends Model
     {
         return $query->where(function (Builder $q): void {
             $q->whereNull('company_id')
-              ->orWhere('company_id', session('active_company_id'));
+                ->orWhere('company_id', session('active_company_id'));
         });
     }
 }

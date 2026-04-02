@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Pages\Auth;
 
+use App\Repositories\UserRepository;
 use App\Services\AuthService;
 use Filament\Auth\Http\Responses\Contracts\LoginResponse;
 use Filament\Auth\Pages\Login as BaseLogin;
@@ -39,7 +40,7 @@ class Login extends BaseLogin
                             return [];
                         }
 
-                        $user = app(\App\Repositories\UserRepository::class)->findByPhone($phone);
+                        $user = app(UserRepository::class)->findByPhone($phone);
 
                         if (! $user) {
                             return [];

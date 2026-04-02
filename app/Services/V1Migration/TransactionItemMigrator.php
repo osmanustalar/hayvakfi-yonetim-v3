@@ -7,13 +7,15 @@ namespace App\Services\V1Migration;
 use App\Enums\TransactionType;
 use App\Models\SafeTransactionItem;
 use App\Services\V1Migration\Traits\ResolvesCategories;
-use Illuminate\Support\Facades\DB;
 
 class TransactionItemMigrator extends BaseMigrator
 {
     use ResolvesCategories;
+
     private array $categoryMap = [];
+
     private array $donationCategoryMap = [];
+
     private array $transactionMap = [];
 
     public function __construct(private CategoryMigrator $categoryMigrator) {}
@@ -146,6 +148,7 @@ class TransactionItemMigrator extends BaseMigrator
         foreach ($v1Txs as $v1Id) {
             $map[$v1Id] = $v1Id; // ID'ler aynı kalıyor
         }
+
         return $map;
     }
 
@@ -162,7 +165,7 @@ class TransactionItemMigrator extends BaseMigrator
                 continue; // bank_payment_id yoksa duplicate olma ihtimali az
             }
 
-            $combo = $tx->safe_id . '|' . $tx->bank_payment_id;
+            $combo = $tx->safe_id.'|'.$tx->bank_payment_id;
 
             if (isset($seenCombos[$combo])) {
                 // İkinci ve sonraki duplicate'leri skip et

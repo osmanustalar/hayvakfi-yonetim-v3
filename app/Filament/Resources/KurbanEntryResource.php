@@ -9,6 +9,7 @@ use App\Filament\Resources\KurbanEntryResource\Pages;
 use App\Models\Contact;
 use App\Models\KurbanEntry;
 use App\Models\KurbanList;
+use App\Models\SafeTransactionCategory;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -61,9 +62,9 @@ class KurbanEntryResource extends Resource
                                 ->orderBy('first_name')
                                 ->get()
                                 ->mapWithKeys(fn (Contact $c): array => [
-                                    $c->id => $c->first_name . ' ' . $c->last_name
-                                        . ($c->phone ? ' — ' . $c->phone : '')
-                                        . ($c->region ? ' — ' . $c->region->name : ''),
+                                    $c->id => $c->first_name.' '.$c->last_name
+                                        .($c->phone ? ' — '.$c->phone : '')
+                                        .($c->region ? ' — '.$c->region->name : ''),
                                 ])
                                 ->toArray()
                             )
@@ -111,7 +112,7 @@ class KurbanEntryResource extends Resource
                                 Select::make('sacrifice_category_id')
                                     ->label('Kurban Türü')
                                     ->required()
-                                    ->options(fn () => \App\Models\SafeTransactionCategory::query()
+                                    ->options(fn () => SafeTransactionCategory::query()
                                         ->where('is_sacrifice_type', true)
                                         ->where('is_active', true)
                                         ->orderBy('sort_order')
@@ -157,7 +158,7 @@ class KurbanEntryResource extends Resource
                     ->color(fn ($state) => match ($state instanceof LivestockType ? $state : null) {
                         LivestockType::SMALL => 'warning',
                         LivestockType::LARGE => 'success',
-                        default             => 'gray',
+                        default => 'gray',
                     }),
 
                 TextColumn::make('sacrificeCategory.name')
@@ -224,9 +225,9 @@ class KurbanEntryResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListKurbanEntries::route('/'),
+            'index' => Pages\ListKurbanEntries::route('/'),
             'create' => Pages\CreateKurbanEntry::route('/create'),
-            'edit'   => Pages\EditKurbanEntry::route('/{record}/edit'),
+            'edit' => Pages\EditKurbanEntry::route('/{record}/edit'),
         ];
     }
 }

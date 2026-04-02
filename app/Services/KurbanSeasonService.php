@@ -15,7 +15,7 @@ class KurbanSeasonService
 
     public function create(array $data): KurbanSeason
     {
-        $data['company_id']      = (int) session('active_company_id');
+        $data['company_id'] = (int) session('active_company_id');
         $data['created_user_id'] = auth()->id();
 
         /** @var KurbanSeason */

@@ -4,16 +4,18 @@ declare(strict_types=1);
 
 namespace App\Services\V1Migration;
 
-use App\Enums\TransactionType;
 use App\Enums\OperationType;
-use App\Models\SafeTransaction;
+use App\Enums\TransactionType;
 use App\Services\V1Migration\Traits\ResolvesCategories;
 
 class TransactionMigrator extends BaseMigrator
 {
     use ResolvesCategories;
+
     private array $currencyMap = [];
+
     private array $categoryMap = [];
+
     private array $donationCategoryMap = [];
 
     public function __construct(
@@ -155,6 +157,7 @@ class TransactionMigrator extends BaseMigrator
                 $map[$v1Id] = $v3Tx->id;
             }
         }
+
         return $map;
     }
 

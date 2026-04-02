@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 abstract class BaseMigrator
 {
     protected string $v1Connection = 'v1';
+
     protected string $v3Connection = 'mysql';
 
     /**
@@ -63,6 +64,7 @@ abstract class BaseMigrator
                 $map[$record->id] = $v3Record->id;
             }
         }
+
         return $map;
     }
 }

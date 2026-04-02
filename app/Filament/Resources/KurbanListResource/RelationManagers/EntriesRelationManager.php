@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\KurbanListResource\RelationManagers;
 
+use App\Enums\LivestockType;
+use App\Models\Contact;
+use App\Models\SafeTransactionCategory;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use App\Models\Contact;
-use App\Enums\LivestockType;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
-
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
@@ -44,9 +44,9 @@ class EntriesRelationManager extends RelationManager
                             ->orderBy('first_name')
                             ->get()
                             ->mapWithKeys(fn (Contact $c): array => [
-                                $c->id => trim($c->first_name . ' ' . $c->last_name)
-                                    . ($c->phone ? ' — ' . $c->phone : '')
-                                    . ($c->region ? ' — ' . $c->region->name : ''),
+                                $c->id => trim($c->first_name.' '.$c->last_name)
+                                    .($c->phone ? ' — '.$c->phone : '')
+                                    .($c->region ? ' — '.$c->region->name : ''),
                             ])
                             ->toArray()
                         )
@@ -67,14 +67,14 @@ class EntriesRelationManager extends RelationManager
                                     ->tel()
                                     ->maxLength(30)
                                     ->columnSpanFull(),
-                            ])
+                            ]),
                         ])
                         ->createOptionUsing(function (array $data) {
                             return Contact::create([
-                                'company_id'      => session('active_company_id'),
-                                'first_name'      => $data['first_name'],
-                                'last_name'       => $data['last_name'],
-                                'phone'           => $data['phone'] ?? null,
+                                'company_id' => session('active_company_id'),
+                                'first_name' => $data['first_name'],
+                                'last_name' => $data['last_name'],
+                                'phone' => $data['phone'] ?? null,
                                 'created_user_id' => auth()->id(),
                             ])->id;
                         })
@@ -91,7 +91,7 @@ class EntriesRelationManager extends RelationManager
                         Select::make('sacrifice_category_id')
                             ->label('Kurban Türü')
                             ->required()
-                            ->options(fn () => \App\Models\SafeTransactionCategory::query()
+                            ->options(fn () => SafeTransactionCategory::query()
                                 ->where('is_sacrifice_type', true)
                                 ->where('is_active', true)
                                 ->orderBy('sort_order')
@@ -128,7 +128,6 @@ class EntriesRelationManager extends RelationManager
                     ->label('Telefon')
                     ->searchable(),
 
-
                 TextColumn::make('sacrificeCategory.name')
                     ->label('Kurban Türü'),
 
@@ -161,6 +160,7 @@ class EntriesRelationManager extends RelationManager
                     ->mutateFormDataUsing(function (array $data): array {
                         $data['company_id'] = (int) session('active_company_id');
                         $data['created_user_id'] = auth()->id();
+
                         return $data;
                     }),
             ])

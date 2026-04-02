@@ -9,16 +9,17 @@ use App\Enums\TransactionType;
 use App\Filament\Resources\SafeTransactionResource;
 use App\Models\Safe;
 use App\Models\SafeTransaction;
+use App\Models\User;
 use App\Services\SafeTransactionService;
 use Filament\Actions\DeleteAction;
 use Filament\Forms;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\EditRecord;
 use Filament\Schemas;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
-use Filament\Notifications\Notification;
-use Filament\Resources\Pages\EditRecord;
-use Filament\Support\RawJs;
+use Illuminate\Database\Eloquent\Model;
 
 class EditExchangeSafeTransaction extends EditRecord
 {
@@ -52,7 +53,7 @@ class EditExchangeSafeTransaction extends EditRecord
         }
     }
 
-    public function mount(int | string $record): void
+    public function mount(int|string $record): void
     {
         parent::mount($record);
 
@@ -100,26 +101,26 @@ class EditExchangeSafeTransaction extends EditRecord
                                 // Hedef kasa gösterimi (readonly)
                                 Forms\Components\Select::make('target_safe_display')
                                     ->label('Giriş Yapılan Kasa (Hedef)')
-                                    ->options(fn () => $this->targetSafe ? [$this->targetSafe->id => $this->targetSafe->name . ' (' . ($this->targetSafe->currency?->symbol ?? '') . ')'] : [])
+                                    ->options(fn () => $this->targetSafe ? [$this->targetSafe->id => $this->targetSafe->name.' ('.($this->targetSafe->currency?->symbol ?? '').')'] : [])
                                     ->default(fn () => $this->targetSafe?->id)
                                     ->disabled()
                                     ->prefixIcon('heroicon-o-building-library')
-                                    ->helperText(fn () => $this->targetSafe ? 'Mevcut Bakiye: ' . number_format((float) $this->targetSafe->balance, 2, ',', '.') . ' ' . ($this->targetSafe->currency?->symbol ?? 'TRY') : ''),
+                                    ->helperText(fn () => $this->targetSafe ? 'Mevcut Bakiye: '.number_format((float) $this->targetSafe->balance, 2, ',', '.').' '.($this->targetSafe->currency?->symbol ?? 'TRY') : ''),
 
                                 // Kaynak kasa gösterimi (readonly)
                                 Forms\Components\Select::make('source_safe_display')
                                     ->label('Çıkış Yapılan Kasa (Kaynak)')
-                                    ->options(fn () => $this->sourceSafe ? [$this->sourceSafe->id => $this->sourceSafe->name . ' (' . ($this->sourceSafe->currency?->symbol ?? '') . ')'] : [])
+                                    ->options(fn () => $this->sourceSafe ? [$this->sourceSafe->id => $this->sourceSafe->name.' ('.($this->sourceSafe->currency?->symbol ?? '').')'] : [])
                                     ->default(fn () => $this->sourceSafe?->id)
                                     ->disabled()
                                     ->prefixIcon('heroicon-o-building-library')
-                                    ->helperText(fn () => $this->sourceSafe ? 'Mevcut Bakiye: ' . number_format((float) $this->sourceSafe->balance, 2, ',', '.') . ' ' . ($this->sourceSafe->currency?->symbol ?? 'TRY') : ''),
+                                    ->helperText(fn () => $this->sourceSafe ? 'Mevcut Bakiye: '.number_format((float) $this->sourceSafe->balance, 2, ',', '.').' '.($this->sourceSafe->currency?->symbol ?? 'TRY') : ''),
                             ]),
 
                         Schemas\Components\Grid::make(2)
                             ->schema([
                                 Forms\Components\TextInput::make('target_amount')
-                                    ->label(fn () => 'Giriş Tutarı (' . ($this->targetSafe?->currency?->symbol ?? '—') . ')')
+                                    ->label(fn () => 'Giriş Tutarı ('.($this->targetSafe?->currency?->symbol ?? '—').')')
                                     ->required()
                                     ->step(0.01)
                                     ->inputMode('decimal')
@@ -132,7 +133,7 @@ class EditExchangeSafeTransaction extends EditRecord
                                     }),
 
                                 Forms\Components\TextInput::make('source_amount')
-                                    ->label(fn () => 'Çıkış Tutarı (' . ($this->sourceSafe?->currency?->symbol ?? 'TRY') . ')')
+                                    ->label(fn () => 'Çıkış Tutarı ('.($this->sourceSafe?->currency?->symbol ?? 'TRY').')')
                                     ->required()
                                     ->step(0.01)
                                     ->inputMode('decimal')
@@ -169,7 +170,7 @@ class EditExchangeSafeTransaction extends EditRecord
                                 Forms\Components\Select::make('reference_user_id')
                                     ->label('İşlemi Yapan Kullanıcı')
                                     ->options(function (): array {
-                                        return \App\Models\User::query()
+                                        return User::query()
                                             ->whereHas('companies', fn ($q) => $q->where('company_id', session('active_company_id')))
                                             ->orderBy('name')
                                             ->get()
@@ -191,7 +192,7 @@ class EditExchangeSafeTransaction extends EditRecord
             ->columns(1);
     }
 
-    protected function handleRecordUpdate(\Illuminate\Database\Eloquent\Model $record, array $data): \Illuminate\Database\Eloquent\Model
+    protected function handleRecordUpdate(Model $record, array $data): Model
     {
         /** @var SafeTransaction $transaction */
         $transaction = $record;
@@ -202,9 +203,9 @@ class EditExchangeSafeTransaction extends EditRecord
             $newAmount = (float) $data['source_amount'];
             if (abs($newAmount - $originalAmount) > 0.001) {
                 throw new \RuntimeException(
-                    "API\'den geri verilen işlemlerde tutarlar değiştirilemez. " .
-                    "Orijinal tutar: " . number_format($originalAmount, 2, ',', '.') .
-                    ", Yeni tutar: " . number_format($newAmount, 2, ',', '.')
+                    "API\'den geri verilen işlemlerde tutarlar değiştirilemez. ".
+                    'Orijinal tutar: '.number_format($originalAmount, 2, ',', '.').
+                    ', Yeni tutar: '.number_format($newAmount, 2, ',', '.')
                 );
             }
         }
@@ -215,12 +216,12 @@ class EditExchangeSafeTransaction extends EditRecord
         }
 
         $payload = [
-            'source_amount'      => (float) $data['source_amount'],
-            'target_amount'      => (float) $data['target_amount'],
-            'item_rate'          => (float) ($data['item_rate'] ?? 0),
-            'process_date'       => $transaction->integration_id !== null ? $transaction->process_date : $data['process_date'],
-            'description'        => $data['description'] ?? null,
-            'reference_user_id'  => $data['reference_user_id'] ?? null,
+            'source_amount' => (float) $data['source_amount'],
+            'target_amount' => (float) $data['target_amount'],
+            'item_rate' => (float) ($data['item_rate'] ?? 0),
+            'process_date' => $transaction->integration_id !== null ? $transaction->process_date : $data['process_date'],
+            'description' => $data['description'] ?? null,
+            'reference_user_id' => $data['reference_user_id'] ?? null,
         ];
 
         try {

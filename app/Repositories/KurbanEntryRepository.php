@@ -6,13 +6,12 @@ namespace App\Repositories;
 
 use App\Models\KurbanEntry;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\DB;
 
 class KurbanEntryRepository extends BaseRepository
 {
     public function __construct()
     {
-        parent::__construct(new KurbanEntry());
+        parent::__construct(new KurbanEntry);
     }
 
     /**

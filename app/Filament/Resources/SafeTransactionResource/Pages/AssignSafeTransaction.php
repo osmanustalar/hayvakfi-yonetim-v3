@@ -12,10 +12,10 @@ use App\Services\SafeTransactionService;
 use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Notifications\Notification;
+use Filament\Resources\Pages\EditRecord;
 use Filament\Schemas;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
-use Filament\Resources\Pages\EditRecord;
 use Illuminate\Database\Eloquent\Model;
 
 class AssignSafeTransaction extends EditRecord
@@ -29,7 +29,7 @@ class AssignSafeTransaction extends EditRecord
         $record = $this->getRecord();
 
         // Sadece kategori ID=3 (ATAMA BEKLİYOR) ve henüz atanmamış işlemler
-        if (!$record->items()->where('transaction_category_id', 3)->exists() || $record->target_transaction_id !== null) {
+        if (! $record->items()->where('transaction_category_id', 3)->exists() || $record->target_transaction_id !== null) {
             abort(403, 'Bu işlem atanamaz.');
         }
     }
@@ -130,7 +130,7 @@ class AssignSafeTransaction extends EditRecord
                             ->helperText('Transfer ise tutar aynı olanlar listesinden seç, Döviz ise tüm kayıtlar listelenir')
                             ->options(function (Get $get, Model $record): array {
                                 $operationChoice = $get('operation_choice');
-                                $targetSafeId    = $get('target_safe_id');
+                                $targetSafeId = $get('target_safe_id');
 
                                 if ($operationChoice === null || $targetSafeId === null) {
                                     return [];
@@ -138,13 +138,13 @@ class AssignSafeTransaction extends EditRecord
 
                                 $targetSafe = Safe::with('safeGroup')->find($targetSafeId);
 
-                                if ($targetSafe === null || !$targetSafe->safeGroup->is_api_integration) {
+                                if ($targetSafe === null || ! $targetSafe->safeGroup->is_api_integration) {
                                     return [];
                                 }
 
                                 // Repository kullanarak eligible transactions'ı çek
                                 $repository = app(SafeTransactionRepository::class);
-                                $eligible   = $repository->getEligibleTransactions($record, $targetSafe, $operationChoice);
+                                $eligible = $repository->getEligibleTransactions($record, $targetSafe, $operationChoice);
 
                                 return $eligible->mapWithKeys(fn (SafeTransaction $tx) => [
                                     $tx->id => sprintf(
@@ -189,7 +189,7 @@ class AssignSafeTransaction extends EditRecord
                                     ->step(0.0001)
                                     ->required(function (Get $get): bool {
                                         $operationChoice = $get('operation_choice');
-                                        $targetSafeId    = $get('target_safe_id');
+                                        $targetSafeId = $get('target_safe_id');
 
                                         if ($operationChoice !== 'exchange' || $targetSafeId === null) {
                                             return false;
@@ -197,11 +197,11 @@ class AssignSafeTransaction extends EditRecord
 
                                         $targetSafe = Safe::with('safeGroup')->find($targetSafeId);
 
-                                        return $targetSafe !== null && !$targetSafe->safeGroup->is_api_integration;
+                                        return $targetSafe !== null && ! $targetSafe->safeGroup->is_api_integration;
                                     })
                                     ->visible(function (Get $get): bool {
                                         $operationChoice = $get('operation_choice');
-                                        $targetSafeId    = $get('target_safe_id');
+                                        $targetSafeId = $get('target_safe_id');
 
                                         if ($operationChoice !== 'exchange' || $targetSafeId === null) {
                                             return false;
@@ -209,7 +209,7 @@ class AssignSafeTransaction extends EditRecord
 
                                         $targetSafe = Safe::with('safeGroup')->find($targetSafeId);
 
-                                        return $targetSafe !== null && !$targetSafe->safeGroup->is_api_integration;
+                                        return $targetSafe !== null && ! $targetSafe->safeGroup->is_api_integration;
                                     }),
 
                                 Forms\Components\TextInput::make('target_amount')
@@ -219,7 +219,7 @@ class AssignSafeTransaction extends EditRecord
                                     ->step(0.01)
                                     ->required(function (Get $get): bool {
                                         $operationChoice = $get('operation_choice');
-                                        $targetSafeId    = $get('target_safe_id');
+                                        $targetSafeId = $get('target_safe_id');
 
                                         if ($operationChoice !== 'exchange' || $targetSafeId === null) {
                                             return false;
@@ -227,11 +227,11 @@ class AssignSafeTransaction extends EditRecord
 
                                         $targetSafe = Safe::with('safeGroup')->find($targetSafeId);
 
-                                        return $targetSafe !== null && !$targetSafe->safeGroup->is_api_integration;
+                                        return $targetSafe !== null && ! $targetSafe->safeGroup->is_api_integration;
                                     })
                                     ->visible(function (Get $get): bool {
                                         $operationChoice = $get('operation_choice');
-                                        $targetSafeId    = $get('target_safe_id');
+                                        $targetSafeId = $get('target_safe_id');
 
                                         if ($operationChoice !== 'exchange' || $targetSafeId === null) {
                                             return false;
@@ -239,7 +239,7 @@ class AssignSafeTransaction extends EditRecord
 
                                         $targetSafe = Safe::with('safeGroup')->find($targetSafeId);
 
-                                        return $targetSafe !== null && !$targetSafe->safeGroup->is_api_integration;
+                                        return $targetSafe !== null && ! $targetSafe->safeGroup->is_api_integration;
                                     }),
                             ]),
                     ]),
@@ -251,12 +251,12 @@ class AssignSafeTransaction extends EditRecord
         /** @var SafeTransaction */
         $record = $this->getRecord();
 
-        $data['type_label']     = $record->type->label();
-        $data['operation_choice']        = null;
-        $data['target_safe_id']          = null;
-        $data['target_transaction_id']   = null;
-        $data['exchange_rate']           = null;
-        $data['target_amount']           = null;
+        $data['type_label'] = $record->type->label();
+        $data['operation_choice'] = null;
+        $data['target_safe_id'] = null;
+        $data['target_transaction_id'] = null;
+        $data['exchange_rate'] = null;
+        $data['target_amount'] = null;
 
         return $data;
     }
@@ -267,7 +267,7 @@ class AssignSafeTransaction extends EditRecord
 
         // Validasyon
         $operationChoice = $data['operation_choice'] ?? null;
-        $targetSafeId    = $data['target_safe_id'] ?? null;
+        $targetSafeId = $data['target_safe_id'] ?? null;
 
         if ($operationChoice === null || $targetSafeId === null) {
             throw new \Exception('Operasyon türü ve hedef kasa seçilmelidir.');
@@ -285,7 +285,7 @@ class AssignSafeTransaction extends EditRecord
         }
 
         // Döviz için exchange_rate ve target_amount kontrolü
-        if ($operationChoice === 'exchange' && !$targetSafe->safeGroup->is_api_integration) {
+        if ($operationChoice === 'exchange' && ! $targetSafe->safeGroup->is_api_integration) {
             if (empty($data['exchange_rate']) || empty($data['target_amount'])) {
                 throw new \Exception('Döviz işleminde kur ve hedef tutar girilmelidir.');
             }

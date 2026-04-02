@@ -99,9 +99,9 @@ class RegionResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListRegions::route('/'),
+            'index' => Pages\ListRegions::route('/'),
             'create' => Pages\CreateRegion::route('/create'),
-            'edit'   => Pages\EditRegion::route('/{record}/edit'),
+            'edit' => Pages\EditRegion::route('/{record}/edit'),
         ];
     }
 }

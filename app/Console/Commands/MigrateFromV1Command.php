@@ -33,6 +33,7 @@ class MigrateFromV1Command extends Command
         } catch (\Exception $e) {
             $this->error("V1 veritabanına bağlanılamıyor: {$e->getMessage()}");
             $this->error('Lütfen .env dosyasında DB_V1_* değişkenlerini kontrol edin.');
+
             return self::FAILURE;
         }
 
@@ -79,6 +80,7 @@ class MigrateFromV1Command extends Command
                     $this->info("  ✓ {$name}: {$count} kayıt taşındı");
                 } catch (\Exception $e) {
                     $this->error("  ✗ {$name} başarısız: {$e->getMessage()}");
+
                     return self::FAILURE;
                 }
             }
@@ -89,7 +91,7 @@ class MigrateFromV1Command extends Command
             $this->info("📊 Toplam {$totalRecords} kayıt taşınabilir durumda");
             $this->line('');
             $this->info('Gerçek taşıma için şunu çalıştırın:');
-            $this->line('  php artisan db:migrate-from-v1' . ($fresh ? ' --fresh' : ''));
+            $this->line('  php artisan db:migrate-from-v1'.($fresh ? ' --fresh' : ''));
         } else {
             $this->info("✅ Taşıma başarıyla tamamlandı ({$totalRecords} kayıt)");
         }

@@ -15,7 +15,7 @@ class KurbanListService
 
     public function create(array $data): KurbanList
     {
-        $data['company_id']      = (int) session('active_company_id');
+        $data['company_id'] = (int) session('active_company_id');
         $data['created_user_id'] = auth()->id();
 
         /** @var KurbanList */

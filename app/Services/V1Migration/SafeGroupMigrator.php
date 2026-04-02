@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\V1Migration;
 
-use App\Models\SafeGroup;
-
 class SafeGroupMigrator extends BaseMigrator
 {
     public function count(): int

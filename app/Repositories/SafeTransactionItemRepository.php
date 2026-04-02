@@ -10,18 +10,18 @@ class SafeTransactionItemRepository extends BaseRepository
 {
     public function __construct()
     {
-        parent::__construct(new SafeTransactionItem());
+        parent::__construct(new SafeTransactionItem);
     }
 
     public function createMany(int $transactionId, int $companyId, array $items): void
     {
         foreach ($items as $item) {
             $this->model->newQuery()->create([
-                'transaction_id'          => $transactionId,
-                'company_id'              => $companyId,
+                'transaction_id' => $transactionId,
+                'company_id' => $companyId,
                 'transaction_category_id' => $item['transaction_category_id'],
-                'donation_category_id'    => $item['donation_category_id'] ?? null,
-                'amount'                  => $item['amount'],
+                'donation_category_id' => $item['donation_category_id'] ?? null,
+                'amount' => $item['amount'],
             ]);
         }
     }

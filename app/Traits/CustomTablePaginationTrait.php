@@ -17,7 +17,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
  */
 trait CustomTablePaginationTrait
 {
-    protected function paginateTableQuery(Builder $query): Paginator | CursorPaginator
+    protected function paginateTableQuery(Builder $query): Paginator|CursorPaginator
     {
         $perPage = $this->getTableRecordsPerPage();
 

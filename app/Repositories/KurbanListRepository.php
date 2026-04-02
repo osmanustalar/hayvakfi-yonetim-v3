@@ -11,7 +11,7 @@ class KurbanListRepository extends BaseRepository
 {
     public function __construct()
     {
-        parent::__construct(new KurbanList());
+        parent::__construct(new KurbanList);
     }
 
     /**

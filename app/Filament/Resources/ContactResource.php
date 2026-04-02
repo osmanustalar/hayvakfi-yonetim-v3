@@ -7,11 +7,12 @@ namespace App\Filament\Resources;
 use App\Enums\LivestockType;
 use App\Filament\Resources\ContactResource\Pages;
 use App\Models\Contact;
-use App\Models\Region;
 use App\Models\KurbanEntry;
 use App\Models\KurbanList;
 use App\Models\KurbanSeason;
+use App\Models\Region;
 use App\Models\SafeTransactionCategory;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -26,8 +27,8 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
-use Filament\Actions\Action;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
@@ -61,8 +62,8 @@ class ContactResource extends Resource
     {
         /** @var Contact $record */
         return [
-            'Telefon'    => $record->phone ?? '-',
-            'Bölge'      => $record->region?->name ?? '-',
+            'Telefon' => $record->phone ?? '-',
+            'Bölge' => $record->region?->name ?? '-',
         ];
     }
 
@@ -269,11 +270,11 @@ class ContactResource extends Resource
                                 ->required()
                                 ->options(
                                     $lists->mapWithKeys(fn (KurbanList $l): array => [
-                                        $l->id => ($l->season?->year ?? '?') . ' — ' . ($l->collector?->name ?? 'Toplayıcı yok'),
+                                        $l->id => ($l->season?->year ?? '?').' — '.($l->collector?->name ?? 'Toplayıcı yok'),
                                     ])->toArray()
                                 )
                                 ->live()
-                                ->afterStateUpdated(function (?int $state, \Filament\Schemas\Components\Utilities\Set $set) use ($activeSeason): void {
+                                ->afterStateUpdated(function (?int $state, Set $set): void {
                                     if ($state === null) {
                                         return;
                                     }
@@ -313,24 +314,24 @@ class ContactResource extends Resource
                                 ->rows(3),
                         ];
                     })
-                    ->action(function (\App\Models\Contact $record, array $data): void {
+                    ->action(function (Contact $record, array $data): void {
                         KurbanEntry::create([
-                            'company_id'             => session('active_company_id'),
-                            'kurban_list_id'         => (int) $data['kurban_list_id'],
-                            'contact_id'             => $record->id,
-                            'sacrifice_category_id'  => (int) $data['sacrifice_category_id'],
-                            'livestock_type'         => $data['livestock_type'],
-                            'notes'                  => $data['notes'] ?? null,
-                            'created_user_id'        => auth()->id(),
+                            'company_id' => session('active_company_id'),
+                            'kurban_list_id' => (int) $data['kurban_list_id'],
+                            'contact_id' => $record->id,
+                            'sacrifice_category_id' => (int) $data['sacrifice_category_id'],
+                            'livestock_type' => $data['livestock_type'],
+                            'notes' => $data['notes'] ?? null,
+                            'created_user_id' => auth()->id(),
                         ]);
 
                         Notification::make()
                             ->success()
                             ->title('Kurban listesine eklendi')
-                            ->body($record->first_name . ' ' . $record->last_name . ' kurban listesine kaydedildi.')
+                            ->body($record->first_name.' '.$record->last_name.' kurban listesine kaydedildi.')
                             ->send();
                     })
-                    ->modalHeading(fn (\App\Models\Contact $record): string => $record->first_name . ' ' . $record->last_name . ' — Kurban Listesine Ekle')
+                    ->modalHeading(fn (Contact $record): string => $record->first_name.' '.$record->last_name.' — Kurban Listesine Ekle')
                     ->modalSubmitActionLabel('Listeye Ekle')
                     ->modalCancelActionLabel('İptal'),
                 ViewAction::make()->label('Görüntüle'),
@@ -347,10 +348,10 @@ class ContactResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListContacts::route('/'),
+            'index' => Pages\ListContacts::route('/'),
             'create' => Pages\CreateContact::route('/create'),
-            'view'   => Pages\ViewContact::route('/{record}'),
-            'edit'   => Pages\EditContact::route('/{record}/edit'),
+            'view' => Pages\ViewContact::route('/{record}'),
+            'edit' => Pages\EditContact::route('/{record}/edit'),
         ];
     }
 }

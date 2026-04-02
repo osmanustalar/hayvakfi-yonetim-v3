@@ -55,6 +55,7 @@ class CategoryMigrator extends BaseMigrator
                 $v3Cat = SafeTransactionCategory::where('name', $mappedName)->first();
                 if ($v3Cat) {
                     $idMap[$v1Cat->id] = $v3Cat->id;
+
                     continue; // Yeni kayıt oluşturma
                 }
             }
