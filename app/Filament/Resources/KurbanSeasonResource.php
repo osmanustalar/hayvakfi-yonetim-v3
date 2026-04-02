@@ -124,8 +124,15 @@ class KurbanSeasonResource extends Resource
 
                 TextColumn::make('lists_count')
                     ->label('Liste Sayısı')
-                    ->counts('lists'),
+                    ->counts('lists')
+                    ->badge()
+                    ->color('gray'),
 
+                TextColumn::make('entries_count')
+                    ->label('Toplam Hisse')
+                    ->getStateUsing(fn (KurbanSeason $record) => $record->entries()->count())
+                    ->badge()
+                    ->color('info'),
                 IconColumn::make('is_active')
                     ->label('Aktif')
                     ->boolean(),

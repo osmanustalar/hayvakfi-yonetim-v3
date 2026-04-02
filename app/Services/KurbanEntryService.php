@@ -20,21 +20,47 @@ class KurbanEntryService
 
     public function create(array $data): KurbanEntry
     {
-        $data['company_id'] = (int) session('active_company_id');
-        $data['created_user_id'] = auth()->id();
+        return DB::transaction(function () use ($data): KurbanEntry {
+            $data['company_id'] = (int) session('active_company_id');
+            $data['created_user_id'] = auth()->id();
 
-        // Telefon varsa ve contact_id yoksa, otomatik contact bul
-        if (! empty($data['phone']) && empty($data['contact_id'])) {
-            $contact = $this->contactService->findByPhone($data['phone']);
-            if ($contact !== null) {
-                $data['contact_id'] = $contact->id;
+            // Telefon varsa ve contact_id yoksa, otomatik contact bul
+            if (! empty($data['phone']) && empty($data['contact_id'])) {
+                $contact = $this->contactService->findByPhone($data['phone']);
+                if ($contact !== null) {
+                    $data['contact_id'] = $contact->id;
+                }
             }
-        }
 
-        /** @var KurbanEntry */
-        $entry = $this->repository->create($data);
+            // Sıra numarası hesaplama (Pessimistic Lock ile yarışma durumunu engeller)
+            $list = \App\Models\KurbanList::findOrFail($data['kurban_list_id']);
+            $seasonId = $list->kurban_season_id;
+            
+            \App\Models\KurbanSeason::where('id', $seasonId)->lockForUpdate()->first();
 
-        return $entry;
+            $usedNumbers = \App\Models\KurbanEntry::whereHas('list', function ($q) use ($seasonId) {
+                    $q->where('kurban_season_id', $seasonId);
+                })
+                ->whereNotNull('queue_number')
+                ->orderBy('queue_number')
+                ->pluck('queue_number')
+                ->toArray();
+
+            $nextNumber = 1;
+            foreach ($usedNumbers as $num) {
+                if ($num == $nextNumber) {
+                    $nextNumber++;
+                } elseif ($num > $nextNumber) {
+                    break;
+                }
+            }
+            $data['queue_number'] = $nextNumber;
+
+            /** @var KurbanEntry */
+            $entry = $this->repository->create($data);
+
+            return $entry;
+        });
     }
 
     public function update(KurbanEntry $entry, array $data): KurbanEntry

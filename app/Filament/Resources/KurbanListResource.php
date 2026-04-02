@@ -7,10 +7,10 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\KurbanListResource\Pages;
 use App\Filament\Resources\KurbanListResource\RelationManagers\EntriesRelationManager;
 use App\Models\KurbanList;
+use App\Filament\Resources\KurbanEntryResource;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Actions\ViewAction;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -138,8 +138,14 @@ class KurbanListResource extends Resource
                     ->label('Toplayıcı')
                     ->relationship('collector', 'name'),
             ])
+            ->recordUrl(fn (KurbanList $record): string =>
+                KurbanEntryResource::getUrl('index', [
+                    'tableFilters' => [
+                        'kurban_list_id' => ['value' => (string) $record->id],
+                    ],
+                ])
+            )
             ->actions([
-                ViewAction::make()->label('Görüntüle'),
                 EditAction::make()->label('Düzenle'),
                 Action::make('bulk_payment')
                     ->label('Toplu Tahsilat Al')

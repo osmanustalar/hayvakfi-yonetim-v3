@@ -20,6 +20,7 @@ class KurbanEntry extends Model
     protected $fillable = [
         'company_id',
         'kurban_list_id',
+        'queue_number',
         'contact_id',
         'sacrifice_category_id',
         'livestock_type',

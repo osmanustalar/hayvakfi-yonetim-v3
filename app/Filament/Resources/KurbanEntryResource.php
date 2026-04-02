@@ -15,6 +15,7 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
@@ -53,6 +54,7 @@ class KurbanEntryResource extends Resource
             ->schema([
                 Section::make('Kişi Bilgileri')
                     ->icon('heroicon-o-user')
+                    ->description('Bu kurban kaydının sahibi.')
                     ->schema([
                         Select::make('contact_id')
                             ->label('Kişi')
@@ -69,65 +71,76 @@ class KurbanEntryResource extends Resource
                                 ->toArray()
                             )
                             ->searchable()
+                            ->preload()
                             ->prefixIcon('heroicon-o-user')
                             ->columnSpanFull(),
                     ]),
 
                 Section::make('Kurban Bilgileri')
                     ->icon('heroicon-o-banknotes')
+                    ->description('Kurbanla ilgili detay bilgiler.')
+                    ->columns(2)
                     ->schema([
-                        Grid::make(2)
-                            ->schema([
-                                Select::make('kurban_list_id')
-                                    ->label('Liste')
-                                    ->options(fn () => KurbanList::query()
-                                        ->with(['season', 'collector'])
-                                        ->get()
-                                        ->mapWithKeys(fn (KurbanList $l) => [$l->id => $l->getTitle()])
-                                        ->toArray()
-                                    )
-                                    ->searchable()
-                                    ->preload()
-                                    ->required()
-                                    ->live()
-                                    ->afterStateUpdated(function (?int $state, Set $set): void {
-                                        if ($state === null) {
-                                            return;
-                                        }
+                        // Satır 1: Sıra No + Liste
+                        TextInput::make('queue_number')
+                            ->label('Sıra No')
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->visible(fn (?KurbanEntry $record) => $record !== null),
 
-                                        $list = KurbanList::with('season')->find($state);
+                        Select::make('kurban_list_id')
+                            ->label('Liste')
+                            ->options(fn () => KurbanList::query()
+                                ->with(['season', 'collector'])
+                                ->get()
+                                ->mapWithKeys(fn (KurbanList $l) => [$l->id => $l->getTitle()])
+                                ->toArray()
+                            )
+                            ->searchable()
+                            ->preload()
+                            ->required()
+                            ->live()
+                            ->prefixIcon('heroicon-o-list-bullet')
+                            ->afterStateUpdated(function (?int $state, Set $set): void {
+                                if ($state === null) {
+                                    return;
+                                }
 
-                                        if ($list?->season?->default_livestock_type !== null) {
-                                            $set('livestock_type', $list->season->default_livestock_type->value);
-                                        }
-                                    }),
+                                $list = KurbanList::with('season')->find($state);
 
-                                Select::make('livestock_type')
-                                    ->label('Hayvan Türü (Hisse)')
-                                    ->required()
-                                    ->options(collect(LivestockType::cases())->mapWithKeys(fn (LivestockType $t) => [$t->value => $t->label()])->toArray())
-                                    ->default(LivestockType::LARGE->value)
-                                    ->prefixIcon('heroicon-o-tag'),
+                                if ($list?->season?->default_livestock_type !== null) {
+                                    $set('livestock_type', $list->season->default_livestock_type->value);
+                                }
+                            }),
 
-                                Select::make('sacrifice_category_id')
-                                    ->label('Kurban Türü')
-                                    ->required()
-                                    ->options(fn () => SafeTransactionCategory::query()
-                                        ->where('is_sacrifice_type', true)
-                                        ->where('is_active', true)
-                                        ->orderBy('sort_order')
-                                        ->get()
-                                        ->mapWithKeys(fn ($c) => [$c->id => $c->name])
-                                        ->toArray()
-                                    )
-                                    ->searchable()
-                                    ->prefixIcon('heroicon-o-tag'),
-                            ]),
+                        // Satır 2: Hayvan Türü + Kurban Türü
+                        Select::make('livestock_type')
+                            ->label('Hayvan Türü (Hisse)')
+                            ->required()
+                            ->options(collect(LivestockType::cases())->mapWithKeys(fn (LivestockType $t) => [$t->value => $t->label()])->toArray())
+                            ->default(LivestockType::LARGE->value)
+                            ->prefixIcon('heroicon-o-tag'),
 
+                        Select::make('sacrifice_category_id')
+                            ->label('Kurban Türü')
+                            ->required()
+                            ->options(fn () => SafeTransactionCategory::query()
+                                ->where('is_sacrifice_type', true)
+                                ->where('is_active', true)
+                                ->orderBy('sort_order')
+                                ->get()
+                                ->mapWithKeys(fn ($c) => [$c->id => $c->name])
+                                ->toArray()
+                            )
+                            ->searchable()
+                            ->prefixIcon('heroicon-o-tag'),
+
+                        // Satır 3: Açıklama
                         Textarea::make('notes')
                             ->label('Açıklama')
                             ->nullable()
                             ->rows(3)
+                            ->placeholder('Varsa özel notlar...')
                             ->columnSpanFull(),
                     ]),
             ]);
@@ -137,6 +150,13 @@ class KurbanEntryResource extends Resource
     {
         return $table
             ->columns([
+                TextColumn::make('queue_number')
+                    ->label('Sıra No')
+                    ->sortable()
+                    ->searchable()
+                    ->badge()
+                    ->color('info'),
+
                 TextColumn::make('contact.first_name')
                     ->label('Ad')
                     ->searchable()
@@ -189,7 +209,7 @@ class KurbanEntryResource extends Resource
             ])
             ->paginationPageOptions([20, 50, 100])
             ->defaultPaginationPageOption(20)
-            ->defaultSort('created_at', 'desc')
+            ->defaultSort('queue_number', 'desc')
             ->filters([
                 TernaryFilter::make('is_paid')
                     ->label('Ödeme Durumu')

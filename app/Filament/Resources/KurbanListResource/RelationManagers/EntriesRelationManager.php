@@ -11,9 +11,12 @@ use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
+use App\Services\KurbanEntryService;
+use App\Models\KurbanEntry;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Schema;
@@ -80,7 +83,12 @@ class EntriesRelationManager extends RelationManager
                         })
                         ->prefixIcon('heroicon-o-user'),
 
-                    Grid::make(2)->schema([
+                    Grid::make(3)->schema([
+                        TextInput::make('queue_number')
+                            ->label('Sıra No')
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->visible(fn (?KurbanEntry $record) => $record !== null),
                         Select::make('livestock_type')
                             ->label('Hayvan Türü (Hisse)')
                             ->required()
@@ -114,6 +122,11 @@ class EntriesRelationManager extends RelationManager
     {
         return $table
             ->columns([
+                TextColumn::make('queue_number')
+                    ->label('Sıra No')
+                    ->sortable()
+                    ->badge()
+                    ->color('info'),
                 TextColumn::make('contact.first_name')
                     ->label('Ad')
                     ->searchable()
@@ -140,7 +153,7 @@ class EntriesRelationManager extends RelationManager
                     ->date('d.m.Y')
                     ->placeholder('—'),
             ])
-            ->defaultSort('created_at', 'desc')
+            ->defaultSort('queue_number', 'desc')
             ->filters([
                 TernaryFilter::make('is_paid')
                     ->label('Ödeme Durumu')
@@ -157,14 +170,13 @@ class EntriesRelationManager extends RelationManager
                 CreateAction::make()
                     ->label('Yeni Kayıt')
                     ->slideOver()
-                    ->mutateFormDataUsing(function (array $data): array {
-                        $data['company_id'] = (int) session('active_company_id');
-                        $data['created_user_id'] = auth()->id();
-
-                        return $data;
+                    ->using(function (array $data, RelationManager $livewire): KurbanEntry {
+                        $data['kurban_list_id'] = $livewire->getOwnerRecord()->id;
+                        return app(KurbanEntryService::class)->create($data);
                     }),
             ])
             ->actions([
+                ViewAction::make()->label('Görüntüle'),
                 EditAction::make()
                     ->label('Düzenle')
                     ->slideOver(),
