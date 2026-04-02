@@ -23,6 +23,7 @@ class SafeTransactionCategorySeeder extends Seeder
                 'sort_order'           => 0,
                 'is_active'            => true,
                 'is_disable_in_report' => true,
+                'is_sacrifice_type'    => false,
                 'contact_type'         => null,
                 'color'                => null,
                 'description'          => null,
@@ -41,6 +42,7 @@ class SafeTransactionCategorySeeder extends Seeder
                 'sort_order'           => 0,
                 'is_active'            => true,
                 'is_disable_in_report' => true,
+                'is_sacrifice_type'    => false,
                 'contact_type'         => null,
                 'color'                => null,
                 'description'          => null,
@@ -59,6 +61,7 @@ class SafeTransactionCategorySeeder extends Seeder
                 'sort_order'           => 0,
                 'is_active'            => true,
                 'is_disable_in_report' => false,
+                'is_sacrifice_type'    => false,
                 'contact_type'         => null,
                 'color'                => null,
                 'description'          => null,
@@ -77,6 +80,7 @@ class SafeTransactionCategorySeeder extends Seeder
                 'sort_order'           => 0,
                 'is_active'            => false,
                 'is_disable_in_report' => false,
+                'is_sacrifice_type'    => false,
                 'contact_type'         => null,
                 'color'                => null,
                 'description'          => null,
@@ -95,6 +99,7 @@ class SafeTransactionCategorySeeder extends Seeder
                 'sort_order'           => 10,
                 'is_active'            => true,
                 'is_disable_in_report' => false,
+                'is_sacrifice_type'    => false,
                 'contact_type'         => null,
                 'color'                => null,
                 'description'          => null,
@@ -125,6 +130,7 @@ class SafeTransactionCategorySeeder extends Seeder
                     'sort_order'           => $sortOrder,
                     'is_active'            => true,
                     'is_disable_in_report' => false,
+                    'is_sacrifice_type'    => false,
                     'contact_type'         => 'donor',
                     'color'                => null,
                     'description'          => null,
@@ -144,6 +150,7 @@ class SafeTransactionCategorySeeder extends Seeder
                 'sort_order'           => 20,
                 'is_active'            => true,
                 'is_disable_in_report' => false,
+                'is_sacrifice_type'    => false,
                 'contact_type'         => null,
                 'color'                => null,
                 'description'          => null,
@@ -151,7 +158,7 @@ class SafeTransactionCategorySeeder extends Seeder
             ]
         );
 
-        // Kurban alt kategorileri (ID 13-16, parent_id: 12)
+        // Kurban alt kategorileri (ID 13-16, parent_id: 12, is_sacrifice_type: true)
         $sacrificeSubcategories = [
             13 => 'Vacip Kurban',
             14 => 'Akika Kurbanı',
@@ -172,6 +179,7 @@ class SafeTransactionCategorySeeder extends Seeder
                     'sort_order'           => $sortOrder,
                     'is_active'            => true,
                     'is_disable_in_report' => false,
+                    'is_sacrifice_type'    => true,
                     'contact_type'         => 'donor',
                     'color'                => null,
                     'description'          => null,
@@ -217,6 +225,7 @@ class SafeTransactionCategorySeeder extends Seeder
                     'sort_order'           => $category['sort_order'],
                     'is_active'            => true,
                     'is_disable_in_report' => false,
+                    'is_sacrifice_type'    => false,
                     'contact_type'         => null,
                     'color'                => null,
                     'description'          => null,

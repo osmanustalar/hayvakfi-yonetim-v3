@@ -4,20 +4,30 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources;
 
+use App\Enums\LivestockType;
 use App\Filament\Resources\ContactResource\Pages;
 use App\Models\Contact;
+use App\Models\Region;
+use App\Models\KurbanEntry;
+use App\Models\KurbanList;
+use App\Models\KurbanSeason;
+use App\Models\SafeTransactionCategory;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Actions\Action;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
@@ -52,14 +62,13 @@ class ContactResource extends Resource
         /** @var Contact $record */
         return [
             'Telefon'    => $record->phone ?? '-',
-            'TC Kimlik'  => $record->national_id ?? '-',
-            'Şehir'      => $record->city ?? '-',
+            'Bölge'      => $record->region?->name ?? '-',
         ];
     }
 
     public static function getGloballySearchableAttributes(): array
     {
-        return ['first_name', 'last_name', 'phone', 'national_id'];
+        return ['first_name', 'last_name', 'phone'];
     }
 
     public static function form(Schema $form): Schema
@@ -86,23 +95,27 @@ class ContactResource extends Resource
                                 TextInput::make('phone')
                                     ->label('Telefon')
                                     ->tel()
-                                    ->placeholder('05XX XXX XX XX')
-                                    ->maxLength(20),
-
-                                TextInput::make('national_id')
-                                    ->label('TC Kimlik No')
-                                    ->maxLength(20)
-                                    ->placeholder('11 haneli TC Kimlik'),
+                                    ->placeholder('+90 555 123 45 67')
+                                    ->maxLength(30)
+                                    ->nullable(),
 
                                 DatePicker::make('birth_date')
                                     ->label('Doğum Tarihi')
                                     ->displayFormat('d.m.Y')
                                     ->nullable(),
 
-                                TextInput::make('city')
-                                    ->label('Şehir')
-                                    ->maxLength(100)
-                                    ->placeholder('İstanbul'),
+                                Select::make('region_id')
+                                    ->label('Bölge')
+                                    ->nullable()
+                                    ->options(fn () => Region::query()
+                                        ->where('is_active', true)
+                                        ->orderBy('sort_order')
+                                        ->get()
+                                        ->mapWithKeys(fn (Region $r) => [$r->id => $r->name])
+                                        ->toArray()
+                                    )
+                                    ->searchable()
+                                    ->prefixIcon('heroicon-o-map-pin'),
                             ]),
 
                         Textarea::make('address')
@@ -115,6 +128,29 @@ class ContactResource extends Resource
                             ->label('Notlar')
                             ->rows(3)
                             ->placeholder('Ek notlar...')
+                            ->columnSpanFull(),
+
+                        Repeater::make('phones')
+                            ->label('Ek Telefon Numaraları')
+                            ->relationship('phones')
+                            ->schema([
+                                Grid::make(2)
+                                    ->schema([
+                                        TextInput::make('phone')
+                                            ->label('Telefon')
+                                            ->required()
+                                            ->maxLength(30)
+                                            ->placeholder('+49 170 123 45 67'),
+
+                                        TextInput::make('label')
+                                            ->label('Etiket')
+                                            ->nullable()
+                                            ->maxLength(50)
+                                            ->placeholder('ev, iş, mobil...'),
+                                    ]),
+                            ])
+                            ->addActionLabel('Telefon Ekle')
+                            ->reorderable(false)
                             ->columnSpanFull(),
                     ]),
 
@@ -159,13 +195,9 @@ class ContactResource extends Resource
                     ->searchable()
                     ->copyable(),
 
-                TextColumn::make('national_id')
-                    ->label('TC Kimlik')
+                TextColumn::make('region.name')
+                    ->label('Bölge')
                     ->searchable()
-                    ->toggleable(),
-
-                TextColumn::make('city')
-                    ->label('Şehir')
                     ->toggleable(),
 
                 IconColumn::make('is_donor')
@@ -213,6 +245,94 @@ class ContactResource extends Resource
                     ),
             ])
             ->actions([
+                Action::make('addToKurbanList')
+                    ->label('Kurban Listesine Ekle')
+                    ->icon('heroicon-o-plus-circle')
+                    ->color('warning')
+                    ->visible(fn (): bool => KurbanSeason::query()
+                        ->where('company_id', session('active_company_id'))
+                        ->where('is_active', true)
+                        ->exists()
+                    )
+                    ->form(function (): array {
+                        $activeSeason = KurbanSeason::query()
+                            ->where('company_id', session('active_company_id'))
+                            ->where('is_active', true)
+                            ->with('lists.season')
+                            ->first();
+
+                        $lists = $activeSeason?->lists ?? collect();
+
+                        return [
+                            Select::make('kurban_list_id')
+                                ->label('Kurban Listesi')
+                                ->required()
+                                ->options(
+                                    $lists->mapWithKeys(fn (KurbanList $l): array => [
+                                        $l->id => ($l->season?->year ?? '?') . ' — ' . ($l->collector?->name ?? 'Toplayıcı yok'),
+                                    ])->toArray()
+                                )
+                                ->live()
+                                ->afterStateUpdated(function (?int $state, \Filament\Schemas\Components\Utilities\Set $set) use ($activeSeason): void {
+                                    if ($state === null) {
+                                        return;
+                                    }
+                                    $list = KurbanList::with('season')->find($state);
+                                    if ($list?->season?->default_livestock_type !== null) {
+                                        $set('livestock_type', $list->season->default_livestock_type->value);
+                                    }
+                                })
+                                ->searchable()
+                                ->prefixIcon('heroicon-o-list-bullet'),
+
+                            Select::make('livestock_type')
+                                ->label('Hayvan Türü (Hisse)')
+                                ->required()
+                                ->options(collect(LivestockType::cases())->mapWithKeys(fn (LivestockType $t) => [$t->value => $t->label()])->toArray())
+                                ->default(fn (): string => $activeSeason?->default_livestock_type?->value ?? LivestockType::LARGE->value)
+                                ->prefixIcon('heroicon-o-tag'),
+
+                            Select::make('sacrifice_category_id')
+                                ->label('Kurban Türü')
+                                ->required()
+                                ->options(
+                                    SafeTransactionCategory::query()
+                                        ->where('is_sacrifice_type', true)
+                                        ->where('is_active', true)
+                                        ->orderBy('sort_order')
+                                        ->get()
+                                        ->mapWithKeys(fn ($c) => [$c->id => $c->name])
+                                        ->toArray()
+                                )
+                                ->searchable()
+                                ->prefixIcon('heroicon-o-tag'),
+
+                            Textarea::make('notes')
+                                ->label('Notlar')
+                                ->nullable()
+                                ->rows(3),
+                        ];
+                    })
+                    ->action(function (\App\Models\Contact $record, array $data): void {
+                        KurbanEntry::create([
+                            'company_id'             => session('active_company_id'),
+                            'kurban_list_id'         => (int) $data['kurban_list_id'],
+                            'contact_id'             => $record->id,
+                            'sacrifice_category_id'  => (int) $data['sacrifice_category_id'],
+                            'livestock_type'         => $data['livestock_type'],
+                            'notes'                  => $data['notes'] ?? null,
+                            'created_user_id'        => auth()->id(),
+                        ]);
+
+                        Notification::make()
+                            ->success()
+                            ->title('Kurban listesine eklendi')
+                            ->body($record->first_name . ' ' . $record->last_name . ' kurban listesine kaydedildi.')
+                            ->send();
+                    })
+                    ->modalHeading(fn (\App\Models\Contact $record): string => $record->first_name . ' ' . $record->last_name . ' — Kurban Listesine Ekle')
+                    ->modalSubmitActionLabel('Listeye Ekle')
+                    ->modalCancelActionLabel('İptal'),
                 ViewAction::make()->label('Görüntüle'),
                 EditAction::make()->label('Düzenle'),
             ])

@@ -55,7 +55,7 @@ class SafeTransactionCategoryResource extends Resource
                 $q->whereNull('company_id')
                   ->orWhere('company_id', session('active_company_id'));
             })
-            ->orderByRaw('COALESCE(parent_id, id), sort_order');
+            ->orderByRaw('COALESCE(parent_id, id), parent_id IS NULL DESC, sort_order');
     }
 
     public static function form(Schema $form): Schema
@@ -112,7 +112,7 @@ class SafeTransactionCategoryResource extends Resource
                                     ->default(0),
                             ]),
 
-                        Grid::make(2)
+                        Grid::make(3)
                             ->schema([
                                 Toggle::make('is_active')
                                     ->label('Aktif')
@@ -120,6 +120,11 @@ class SafeTransactionCategoryResource extends Resource
 
                                 Toggle::make('is_disable_in_report')
                                     ->label('Raporda Gizle')
+                                    ->default(false),
+
+                                Toggle::make('is_sacrifice_type')
+                                    ->label('Kurban Türü Olarak Seçilebilir')
+                                    ->helperText('İşaretlenirse, kurban kaydı girerken bu kategori seçilebilir.')
                                     ->default(false),
                             ]),
 
@@ -164,6 +169,10 @@ class SafeTransactionCategoryResource extends Resource
 
                 IconColumn::make('is_disable_in_report')
                     ->label('Raporda Gizli')
+                    ->boolean(),
+
+                IconColumn::make('is_sacrifice_type')
+                    ->label('Kurban Türü')
                     ->boolean(),
 
                 TextColumn::make('company_id')

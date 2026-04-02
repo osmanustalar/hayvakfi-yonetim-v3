@@ -8,6 +8,7 @@ use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Contact extends Model
@@ -21,7 +22,7 @@ class Contact extends Model
         'national_id',
         'birth_date',
         'address',
-        'city',
+        'region_id',
         'is_donor',
         'is_aid_recipient',
         'is_student',
@@ -42,5 +43,15 @@ class Contact extends Model
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_user_id');
+    }
+
+    public function phones(): HasMany
+    {
+        return $this->hasMany(ContactPhone::class);
+    }
+
+    public function region(): BelongsTo
+    {
+        return $this->belongsTo(Region::class);
     }
 }

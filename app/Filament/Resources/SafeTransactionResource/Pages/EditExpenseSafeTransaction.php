@@ -41,10 +41,6 @@ class EditExpenseSafeTransaction extends EditRecord
         if ($type !== 'expense' || $record->operation_type !== null) {
             abort(403, 'Bu sayfa yalnızca gider işlemleri için kullanılabilir.');
         }
-
-        if ($record->safe?->safeGroup?->is_api_integration === true) {
-            abort(403, 'Bu kasa grubu yalnızca API üzerinden güncellenebilir.');
-        }
     }
 
 
@@ -88,7 +84,7 @@ class EditExpenseSafeTransaction extends EditRecord
                                             ->options(
                                                 Safe::query()
                                                     ->where('is_active', true)
-                                                    ->whereHas('safeGroup', fn($q) => $q->where('is_api_integration', false))
+                                                    ->with('currency')
                                                     ->get()
                                                     ->mapWithKeys(fn (Safe $s): array => [
                                                         $s->id => $s->name . ' (' . ($s->currency?->symbol ?? '') . ')',
@@ -112,7 +108,11 @@ class EditExpenseSafeTransaction extends EditRecord
                                             ->label('Toplam Tutar')
                                             ->disabled()
                                             ->dehydrated(false)
-                                            ->prefix(fn (Get $get): string => Safe::find($get('safe_id'))?->currency?->symbol ?? 'TRY'),
+                                            ->prefix(fn (Get $get): string => Safe::find($get('safe_id'))?->currency?->symbol ?? 'TRY')
+                                            ->helperText(fn (): ?string => $this->record->integration_id !== null
+                                                ? 'API işlemi: Toplam tutar ' . Helper::formatShowMoney($this->record->total_amount) . ' olarak sabit kalmalıdır. Kalemler arasında dağıtabilirsiniz.'
+                                                : null
+                                            ),
                                     ]),
                             ]),
                     ]),
@@ -280,23 +280,6 @@ class EditExpenseSafeTransaction extends EditRecord
 
         $newTotal = collect($items)->sum(fn ($i): float => $i['amount']);
 
-        // API kayıtlarında toplam tutar değiştirilemesin
-        if ($transaction->integration_id !== null) {
-            $originalTotal = (float) $transaction->total_amount;
-            if (abs($newTotal - $originalTotal) > 0.001) {
-                throw new \RuntimeException(
-                    "API\'den geri verilen işlemlerde toplam tutar değiştirilemez. " .
-                    "Orijinal tutar: " . number_format($originalTotal, 2, ',', '.') .
-                    ", Yeni tutar: " . number_format($newTotal, 2, ',', '.')
-                );
-            }
-        }
-
-        // API kayıtlarında işlem tarihini değiştirme
-        if ($transaction->integration_id !== null && (string) $data['process_date'] !== (string) $transaction->process_date) {
-            throw new \RuntimeException('API\'den geri verilen işlemlerin tarihi değiştirilemez.');
-        }
-
         $payload = [
             'type'               => TransactionType::EXPENSE->value,
             'total_amount'       => $newTotal,
@@ -308,6 +291,23 @@ class EditExpenseSafeTransaction extends EditRecord
         ];
 
         try {
+            // API kayıtlarında toplam tutar değiştirilemesin
+            if ($transaction->integration_id !== null) {
+                $originalTotal = (float) $transaction->total_amount;
+                if (abs($newTotal - $originalTotal) > 0.001) {
+                    throw new \RuntimeException(
+                        "API\'den geri verilen işlemlerde toplam tutar değiştirilemez. " .
+                        "Orijinal tutar: " . number_format($originalTotal, 2, ',', '.') .
+                        ", Yeni tutar: " . number_format($newTotal, 2, ',', '.')
+                    );
+                }
+            }
+
+            // API kayıtlarında işlem tarihini değiştirme
+            if ($transaction->integration_id !== null && (string) $data['process_date'] !== (string) $transaction->process_date) {
+                throw new \RuntimeException('API\'den geri verilen işlemlerin tarihi değiştirilemez.');
+            }
+
             return app(SafeTransactionService::class)->update($transaction, $payload);
         } catch (\RuntimeException $e) {
             Notification::make()
@@ -323,7 +323,13 @@ class EditExpenseSafeTransaction extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            DeleteAction::make()->label('Sil'),
+            DeleteAction::make()
+                ->label('Sil')
+                ->visible(fn (SafeTransaction $record): bool => $record->integration_id === null)
+                ->tooltip(fn (SafeTransaction $record): ?string => $record->integration_id !== null
+                    ? 'API\'den geri verilen işlemler silinemez'
+                    : null
+                ),
         ];
     }
 

@@ -8,11 +8,11 @@ use App\Enums\ContactType;
 use App\Enums\TransactionType;
 use App\Filament\Resources\SafeTransactionResource;
 use App\Helpers\Helper;
-use App\Models\Contact;
+use App\Models\KurbanEntry;
 use App\Models\Safe;
 use App\Models\SafeTransaction;
-use App\Models\SafeTransactionCategory;
 use App\Services\SafeTransactionService;
+use App\Traits\HasSafeIncomeFormHelpers;
 use Filament\Actions\DeleteAction;
 use Filament\Forms;
 use Filament\Schemas;
@@ -25,9 +25,13 @@ use Filament\Support\RawJs;
 
 class EditIncomeSafeTransaction extends EditRecord
 {
+    use HasSafeIncomeFormHelpers;
+
     protected static string $resource = SafeTransactionResource::class;
 
     public ?ContactType $activeContactType = null;
+
+    public bool $activeIsKurban = false;
 
     protected function authorizeAccess(): void
     {
@@ -41,10 +45,6 @@ class EditIncomeSafeTransaction extends EditRecord
         if ($type !== 'income' || $record->operation_type !== null) {
             abort(403, 'Bu sayfa yalnızca gelir işlemleri için kullanılabilir.');
         }
-
-        if ($record->safe?->safeGroup?->is_api_integration === true) {
-            abort(403, 'Bu kasa grubu yalnızca API üzerinden güncellenebilir.');
-        }
     }
 
 
@@ -52,10 +52,11 @@ class EditIncomeSafeTransaction extends EditRecord
     {
         parent::mount($record);
 
-        // Mevcut kategoriden contact_type al
+        // Mevcut kategoriden contact_type ve is_sacrifice_type al
         foreach ($this->record->items as $item) {
             if ($item->transactionCategory?->contact_type !== null) {
                 $this->activeContactType = $item->transactionCategory->contact_type;
+                $this->activeIsKurban = (bool) ($item->transactionCategory->is_sacrifice_type ?? false);
                 break;
             }
         }
@@ -85,7 +86,7 @@ class EditIncomeSafeTransaction extends EditRecord
                                             ->options(
                                                 Safe::query()
                                                     ->where('is_active', true)
-                                                    ->whereHas('safeGroup', fn($q) => $q->where('is_api_integration', false))
+                                                    ->with('currency')
                                                     ->get()
                                                     ->mapWithKeys(fn (Safe $s): array => [
                                                         $s->id => $s->name . ' (' . ($s->currency?->symbol ?? '') . ')',
@@ -109,7 +110,11 @@ class EditIncomeSafeTransaction extends EditRecord
                                             ->label('Toplam Tutar')
                                             ->disabled()
                                             ->dehydrated(false)
-                                            ->prefix(fn (Get $get): string => Safe::find($get('safe_id'))?->currency?->symbol ?? 'TRY'),
+                                            ->prefix(fn (Get $get): string => Safe::find($get('safe_id'))?->currency?->symbol ?? 'TRY')
+                                            ->helperText(fn (): ?string => $this->record->integration_id !== null
+                                                ? 'API işlemi: Toplam tutar ' . Helper::formatShowMoney($this->record->total_amount) . ' olarak sabit kalmalıdır. Kalemler arasında dağıtabilirsiniz.'
+                                                : null
+                                            ),
                                     ]),
                             ]),
                     ]),
@@ -155,33 +160,8 @@ class EditIncomeSafeTransaction extends EditRecord
                                             ->options(function (): array {
                                                 return self::buildCategoryOptions('income');
                                             })
-                                            ->live(onBlur: true)
-                                            ->afterStateUpdated(function (?int $state, Set $set): void {
-                                                if ($state === null) {
-                                                    $this->activeContactType = null;
-
-                                                    return;
-                                                }
-
-                                                $category = SafeTransactionCategory::find($state);
-
-                                                if ($category === null) {
-                                                    return;
-                                                }
-
-                                                if ($category->children()->exists()) {
-                                                    $set('transaction_category_id', null);
-                                                    Notification::make()
-                                                        ->danger()
-                                                        ->title('Kategori Seçimi Engellendi')
-                                                        ->body('Alt kategorisi olan ana kategori seçilemez. Lütfen bir alt kategori seçin.')
-                                                        ->send();
-
-                                                    return;
-                                                }
-
-                                                $this->activeContactType = $category->contact_type;
-                                            })
+                                            ->live()
+                                            ->afterStateUpdated(fn (?int $state, Set $set) => $this->handleCategoryStateUpdated($state, $set))
                                             ->searchable()
                                             ->prefixIcon('heroicon-o-tag'),
                                     ]),
@@ -191,6 +171,43 @@ class EditIncomeSafeTransaction extends EditRecord
                             ->reorderable(false)
                             ->minItems(1)
                             ->required(),
+                    ]),
+
+                Schemas\Components\Section::make('Kurban Kaydı')
+                    ->description('Kurban kategorisi seçildiyse listeden bir kayıt seçebilirsiniz')
+                    ->icon('heroicon-o-user-group')
+                    ->visible(fn (): bool => $this->activeIsKurban)
+                    ->schema([
+                        Forms\Components\Select::make('kurban_entry_id')
+                            ->label('Kurban Listesinden Seç')
+                            ->placeholder('Ödenmemiş kurban kaydı seçin (opsiyonel)')
+                            ->options(function (): array {
+                                $entries = KurbanEntry::query()
+                                    ->where('company_id', session('active_company_id'))
+                                    ->where('is_paid', false)
+                                    ->whereNull('safe_transaction_id')
+                                    ->with(['list.season', 'list.collector', 'contact'])
+                                    ->get();
+
+                                return $entries->mapWithKeys(function (KurbanEntry $entry): array {
+                                    $seasonYear = $entry->list?->season?->year ?? '?';
+                                    $collectorName = $entry->list?->collector?->name ?? '?';
+
+                                    return [
+                                        $entry->id => sprintf(
+                                            '%s %s — %s / %s',
+                                            $entry->contact?->first_name ?? '?',
+                                            $entry->contact?->last_name ?? '?',
+                                            $seasonYear,
+                                            $collectorName
+                                        ),
+                                    ];
+                                })->toArray();
+                            })
+                            ->searchable()
+                            ->nullable()
+                            ->helperText('Kurban kategorisi seçildiğinde ödenmemiş kayıtlar burada listelenir.')
+                            ->columnSpanFull(),
                     ]),
 
                 Schemas\Components\Section::make('İşlem Detayları')
@@ -238,7 +255,7 @@ class EditIncomeSafeTransaction extends EditRecord
                                             return [];
                                         }
 
-                                        return $this->buildContactOptions($this->activeContactType);
+                                        return $this->buildContactOptions($this->activeContactType, $this->activeIsKurban);
                                     })
                                     ->searchable()
                                     ->prefixIcon('heroicon-o-user-group')
@@ -261,6 +278,9 @@ class EditIncomeSafeTransaction extends EditRecord
         /** @var SafeTransaction $transaction */
         $transaction = $record;
 
+        $kurbanEntryId = $data['kurban_entry_id'] ?? null;
+        unset($data['kurban_entry_id']);
+
         // Eğer form'dan items gelmemişse (hiçbir değişiklik yapılmadıysa), mevcut items'i kullan
         $formItems = $data['items'] ?? [];
         if (empty($formItems)) {
@@ -277,23 +297,6 @@ class EditIncomeSafeTransaction extends EditRecord
 
         $newTotal = collect($items)->sum(fn ($i): float => $i['amount']);
 
-        // API kayıtlarında toplam tutar değiştirilemesin
-        if ($transaction->integration_id !== null) {
-            $originalTotal = (float) $transaction->total_amount;
-            if (abs($newTotal - $originalTotal) > 0.001) {
-                throw new \RuntimeException(
-                    "API\'den geri verilen işlemlerde toplam tutar değiştirilemez. " .
-                    "Orijinal tutar: " . number_format($originalTotal, 2, ',', '.') .
-                    ", Yeni tutar: " . number_format($newTotal, 2, ',', '.')
-                );
-            }
-        }
-
-        // API kayıtlarında işlem tarihini değiştirme
-        if ($transaction->integration_id !== null && (string) $data['process_date'] !== (string) $transaction->process_date) {
-            throw new \RuntimeException('API\'den geri verilen işlemlerin tarihi değiştirilemez.');
-        }
-
         $payload = [
             'type'               => TransactionType::INCOME->value,
             'total_amount'       => $newTotal,
@@ -305,7 +308,38 @@ class EditIncomeSafeTransaction extends EditRecord
         ];
 
         try {
-            return app(SafeTransactionService::class)->update($transaction, $payload);
+            // API kayıtlarında toplam tutar değiştirilemesin
+            if ($transaction->integration_id !== null) {
+                $originalTotal = (float) $transaction->total_amount;
+                if (abs($newTotal - $originalTotal) > 0.001) {
+                    throw new \RuntimeException(
+                        "API\'den geri verilen işlemlerde toplam tutar değiştirilemez. " .
+                        "Orijinal tutar: " . number_format($originalTotal, 2, ',', '.') .
+                        ", Yeni tutar: " . number_format($newTotal, 2, ',', '.')
+                    );
+                }
+            }
+
+            // API kayıtlarında işlem tarihini değiştirme
+            if ($transaction->integration_id !== null && (string) $data['process_date'] !== (string) $transaction->process_date) {
+                throw new \RuntimeException('API\'den geri verilen işlemlerin tarihi değiştirilemez.');
+            }
+
+            $updatedTransaction = app(SafeTransactionService::class)->update($transaction, $payload);
+
+            // Eğer kurban entry seçildiyse, ödendi olarak işaretle
+            if ($kurbanEntryId !== null) {
+                $kurbanEntry = KurbanEntry::find($kurbanEntryId);
+                if ($kurbanEntry !== null) {
+                    $kurbanEntry->update([
+                        'is_paid'              => true,
+                        'paid_date'            => $payload['process_date'],
+                        'safe_transaction_id'  => $updatedTransaction->id,
+                    ]);
+                }
+            }
+
+            return $updatedTransaction;
         } catch (\RuntimeException $e) {
             Notification::make()
                 ->danger()
@@ -320,7 +354,13 @@ class EditIncomeSafeTransaction extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            DeleteAction::make()->label('Sil'),
+            DeleteAction::make()
+                ->label('Sil')
+                ->visible(fn (SafeTransaction $record): bool => $record->integration_id === null)
+                ->tooltip(fn (SafeTransaction $record): ?string => $record->integration_id !== null
+                    ? 'API\'den geri verilen işlemler silinemez'
+                    : null
+                ),
         ];
     }
 
@@ -329,62 +369,4 @@ class EditIncomeSafeTransaction extends EditRecord
         return $this->getResource()::getUrl('index');
     }
 
-    /**
-     * @return array<int|string, string>
-     */
-    private static function buildCategoryOptions(string $type): array
-    {
-        $parents = SafeTransactionCategory::query()
-            ->forActiveCompany()
-            ->where('type', $type)
-            ->where('is_active', true)
-            ->whereNull('parent_id')
-            ->orderBy('sort_order')
-            ->get();
-
-        $options = [];
-
-        foreach ($parents as $parent) {
-            $children = SafeTransactionCategory::query()
-                ->forActiveCompany()
-                ->where('type', $type)
-                ->where('is_active', true)
-                ->where('parent_id', $parent->id)
-                ->orderBy('sort_order')
-                ->get();
-
-            if ($children->isEmpty()) {
-                $options[$parent->id] = $parent->name;
-            } else {
-                $options[$parent->id] = $parent->name . ' (Seçilemez)';
-
-                foreach ($children as $child) {
-                    $options[$child->id] = '⤷ ' . $parent->name . ' → ' . $child->name;
-                }
-            }
-        }
-
-        return $options;
-    }
-
-    /**
-     * @return array<int, string>
-     */
-    private function buildContactOptions(ContactType $contactType): array
-    {
-        $column = match ($contactType) {
-            ContactType::DONOR         => 'is_donor',
-            ContactType::AID_RECIPIENT => 'is_aid_recipient',
-            ContactType::STUDENT       => 'is_student',
-        };
-
-        return Contact::query()
-            ->where($column, true)
-            ->orderBy('first_name')
-            ->get()
-            ->mapWithKeys(fn (Contact $c): array => [
-                $c->id => $c->first_name . ' ' . $c->last_name . ($c->phone ? ' (' . $c->phone . ')' : ''),
-            ])
-            ->toArray();
-    }
 }

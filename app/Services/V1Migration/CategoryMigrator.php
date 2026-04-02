@@ -32,7 +32,7 @@ class CategoryMigrator extends BaseMigrator
             3 => 3,  // ATAMA BEKLİYOR
             4 => 4,  // Açılış
             5 => 5,  // Bağış-Kurban (üst kategori)
-            6 => 15, // Hatim (alt kategori parent_id=5)
+            6 => 11, // Hatim (alt kategori parent_id=5)
         ];
 
         // V1 6'dan sonraki kategorileri (7-26) güncelle/ekle
@@ -49,12 +49,22 @@ class CategoryMigrator extends BaseMigrator
                 continue;
             }
 
+            // V1 "Diğer" kategorileri için özel handling
+            if ($v1Cat->name === 'Diğer') {
+                $mappedName = $v1Cat->type === 'income' ? 'Diğer Gelir' : 'Diğer Gider';
+                $v3Cat = SafeTransactionCategory::where('name', $mappedName)->first();
+                if ($v3Cat) {
+                    $idMap[$v1Cat->id] = $v3Cat->id;
+                    continue; // Yeni kayıt oluşturma
+                }
+            }
+
             // V1 kategorisini V3'te aynı isimle bul veya güncelle
             $v3Cat = SafeTransactionCategory::where('name', $v1Cat->name)->first();
 
             if (! $v3Cat) {
                 // Yeni kategori ekle
-                SafeTransactionCategory::create([
+                $v3Cat = SafeTransactionCategory::create([
                     'name' => $v1Cat->name,
                     'type' => $v1Cat->type,
                     'parent_id' => null,
@@ -113,7 +123,7 @@ class CategoryMigrator extends BaseMigrator
             3 => 3,
             4 => 4,
             5 => 5,
-            6 => 15,
+            6 => 11,
         ]);
     }
 }

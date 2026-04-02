@@ -26,6 +26,7 @@ class SafeTransactionCategory extends Model
         'sort_order',
         'is_active',
         'is_disable_in_report',
+        'is_sacrifice_type',
         'contact_type',
         'color',
         'description',
@@ -39,6 +40,7 @@ class SafeTransactionCategory extends Model
             'contact_type'        => ContactType::class,
             'is_active'           => 'boolean',
             'is_disable_in_report' => 'boolean',
+            'is_sacrifice_type'    => 'boolean',
             'sort_order'          => 'integer',
         ];
     }

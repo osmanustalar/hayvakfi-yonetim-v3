@@ -12,18 +12,14 @@ use App\Models\Safe;
 use App\Models\SafeGroup;
 use App\Models\SafeTransaction;
 use App\Models\User;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Actions\Action;
-use Filament\Actions\DeleteAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -72,7 +68,11 @@ class SafeTransactionResource extends Resource
     {
         return parent::getTableQuery()
             ->with([
-                'items' => fn ($q) => $q->with(['category' => fn ($q) => $q->with('parent')])
+                'items' => fn ($q) => $q->with([
+                    'category' => fn ($q) => $q->withoutGlobalScopes()->with([
+                        'parent' => fn ($q) => $q->withoutGlobalScopes()
+                    ])
+                ])
             ], 'safe.currency', 'currency', 'referenceUser');
     }
 
@@ -276,6 +276,23 @@ class SafeTransactionResource extends Resource
                         'transfer' => 'Hesaplar Arası Transfer',
                     ]),
 
+                SelectFilter::make('category')
+                    ->label('Kategori')
+                    ->options(fn (): array => \App\Models\SafeTransactionCategory::query()
+                        ->forActiveCompany()
+                        ->where('is_active', true)
+                        ->orderBy('sort_order')
+                        ->pluck('name', 'id')
+                        ->toArray()
+                    )
+                    ->query(fn (Builder $query, array $data): Builder =>
+                        $query->when(
+                            $data['value'] ?? null,
+                            fn (Builder $q): Builder => $q->whereHas('items', fn (Builder $subQ) => $subQ->where('transaction_category_id', $data['value']))
+                        )
+                    )
+                    ->searchable(),
+
             ])
             ->filtersFormColumns(2)
             ->actions([
@@ -334,57 +351,9 @@ class SafeTransactionResource extends Resource
                         return static::getUrl('edit-expense', ['record' => $record->id]);
                     }),
 
-                DeleteAction::make()
-                    ->label('Sil')
-                    ->visible(fn (SafeTransaction $record): bool => $record->integration_id === null)
-                    ->tooltip(fn (SafeTransaction $record): ?string => $record->integration_id !== null
-                        ? 'API\'den geri verilen işlemler silinemez'
-                        : null
-                    )
-                    ->before(function (SafeTransaction $record): void {
-                        // İlişkili transfer/exchange kaydını da sil ve bakiyeleri düzelt
-                        $type = $record->type instanceof TransactionType
-                            ? $record->type->value
-                            : (string) $record->type;
-
-                        $safe = $record->safe;
-
-                        if ($safe !== null) {
-                            if ($type === 'income') {
-                                $safe->decrement('balance', (float) $record->total_amount);
-                            } else {
-                                $safe->increment('balance', (float) $record->total_amount);
-                            }
-                        }
-
-                        $record->items()->delete();
-
-                        if ($record->targetTransaction !== null) {
-                            $targetSafe = $record->targetSafe;
-
-                            if ($targetSafe !== null) {
-                                $targetType = $record->targetTransaction->type instanceof TransactionType
-                                    ? $record->targetTransaction->type->value
-                                    : (string) $record->targetTransaction->type;
-
-                                if ($targetType === 'income') {
-                                    $targetSafe->decrement('balance', (float) $record->targetTransaction->total_amount);
-                                } else {
-                                    $targetSafe->increment('balance', (float) $record->targetTransaction->total_amount);
-                                }
-                            }
-
-                            $record->targetTransaction->items()->delete();
-                            $record->targetTransaction->delete();
-                        }
-                    }),
             ])
             ->bulkActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make()
-                        ->label('Seçilenleri Sil')
-                        ->deselectRecordsAfterCompletion(),
-                ]),
+                // Bulk delete disabled - users must use edit page delete button
             ]);
     }
 

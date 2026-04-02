@@ -10,6 +10,7 @@ use App\Models\Currency;
 use App\Models\Safe;
 use App\Models\SafeGroup;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -52,7 +53,11 @@ class SafeResource extends Resource
 
     public static function getTableQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        $query = parent::getTableQuery()->with('safeGroup');
+        $query = parent::getTableQuery()
+            ->with('safeGroup')
+            ->addSelect(DB::raw(
+                '(SELECT MAX(created_at) FROM safe_transactions WHERE safe_id = safes.id) as latest_transaction_date'
+            ));
 
         // super_admin tüm kasaları görebilir, diğerleri sadece kendilerine atanmış kasaları
         if (! auth()->user()?->hasRole('super_admin')) {
@@ -135,32 +140,35 @@ class SafeResource extends Resource
                 TextColumn::make('name')
                     ->label('Kasa Adı')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->url(fn (Safe $record): string => SafeTransactionResource::getUrl('index') . '?safe_id=' . $record->id),
 
                 TextColumn::make('balance')
                     ->label('Bakiye')
                     ->numeric(decimalPlaces: 2)
-                    ->sortable(),
+                    ->sortable()
+                    ->url(fn (Safe $record): string => SafeTransactionResource::getUrl('index') . '?safe_id=' . $record->id),
 
                 TextColumn::make('currency.symbol')
-                    ->label('Döviz'),
+                    ->label('Döviz')
+                    ->url(fn (Safe $record): string => SafeTransactionResource::getUrl('index') . '?safe_id=' . $record->id),
 
                 IconColumn::make('is_active')
                     ->label('Aktif')
-                    ->boolean(),
+                    ->boolean()
+                    ->url(fn (Safe $record): string => SafeTransactionResource::getUrl('index') . '?safe_id=' . $record->id),
 
                 TextColumn::make('sort_order')
                     ->label('Sıra')
                     ->toggleable(isToggledHiddenByDefault: true),
 
-                TextColumn::make('last_transaction_date')
+                TextColumn::make('latest_transaction_date')
                     ->label('Son Hareket')
-                    ->state(fn (Safe $record): string =>
-                        optional($record->transactions()->latest('created_at')->value('created_at'))
-                            ? \Carbon\Carbon::parse($record->transactions()->latest('created_at')->value('created_at'))->format('d.m.Y H:i')
-                            : '—'
+                    ->formatStateUsing(fn (?string $state): string =>
+                        $state ? \Carbon\Carbon::parse($state)->format('d.m.Y H:i') : '—'
                     )
-                    ->placeholder('—'),
+                    ->placeholder('—')
+                    ->url(fn (Safe $record): string => SafeTransactionResource::getUrl('index') . '?safe_id=' . $record->id),
             ])
             ->paginationPageOptions([20, 50, 100])
             ->defaultPaginationPageOption(20)
@@ -196,6 +204,12 @@ class SafeResource extends Resource
                         'safe_id' => $record->id,
                     ])),
 
+                Action::make('transactions')
+                    ->label('Hareketler')
+                    ->icon('heroicon-o-list-bullet')
+                    ->color('gray')
+                    ->url(fn (Safe $record): string => SafeTransactionResource::getUrl('index') . '?safe_id=' . $record->id),
+
                 ActionGroup::make([
                     Action::make('transfer')
                         ->label('Transfer Çıkışı')
@@ -214,12 +228,6 @@ class SafeResource extends Resource
                         ->url(fn (Safe $record): string => SafeTransactionResource::getUrl('create-exchange', [
                             'safe_id' => $record->id,
                         ])),
-
-                    Action::make('transactions')
-                        ->label('Hareketler')
-                        ->icon('heroicon-o-list-bullet')
-                        ->color('gray')
-                        ->url(fn (Safe $record): string => SafeTransactionResource::getUrl('index') . '?safe_id=' . $record->id),
 
                     ViewAction::make()->label('Görüntüle'),
                     EditAction::make()->label('Düzenle'),

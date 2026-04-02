@@ -8,10 +8,10 @@ use App\Enums\ContactType;
 use App\Enums\TransactionType;
 use App\Filament\Resources\SafeTransactionResource;
 use App\Helpers\Helper;
-use App\Models\Contact;
+use App\Models\KurbanEntry;
 use App\Models\Safe;
-use App\Models\SafeTransactionCategory;
 use App\Services\SafeTransactionService;
+use App\Traits\HasSafeIncomeFormHelpers;
 use Filament\Forms;
 use Filament\Schemas;
 use Filament\Schemas\Components\Utilities\Get;
@@ -24,11 +24,15 @@ use Illuminate\Database\Eloquent\Model;
 
 class CreateIncomeSafeTransaction extends CreateRecord
 {
+    use HasSafeIncomeFormHelpers;
+
     protected static string $resource = SafeTransactionResource::class;
 
     public ?int $safeId = null;
 
     public ?ContactType $activeContactType = null;
+
+    public bool $activeIsKurban = false;
 
     protected function authorizeAccess(): void
     {
@@ -148,33 +152,8 @@ class CreateIncomeSafeTransaction extends CreateRecord
                                             ->options(function (): array {
                                                 return self::buildCategoryOptions('income');
                                             })
-                                            ->live(onBlur: true)
-                                            ->afterStateUpdated(function (?int $state, Set $set): void {
-                                                if ($state === null) {
-                                                    $this->activeContactType = null;
-
-                                                    return;
-                                                }
-
-                                                $category = SafeTransactionCategory::find($state);
-
-                                                if ($category === null) {
-                                                    return;
-                                                }
-
-                                                if ($category->children()->exists()) {
-                                                    $set('transaction_category_id', null);
-                                                    Notification::make()
-                                                        ->danger()
-                                                        ->title('Kategori Seçimi Engellendi')
-                                                        ->body('Alt kategorisi olan ana kategori seçilemez. Lütfen bir alt kategori seçin.')
-                                                        ->send();
-
-                                                    return;
-                                                }
-
-                                                $this->activeContactType = $category->contact_type;
-                                            })
+                                            ->live()
+                                            ->afterStateUpdated(fn (?int $state, Set $set) => $this->handleCategoryStateUpdated($state, $set))
                                             ->searchable()
                                             ->prefixIcon('heroicon-o-tag'),
                                     ]),
@@ -184,6 +163,43 @@ class CreateIncomeSafeTransaction extends CreateRecord
                             ->reorderable(false)
                             ->minItems(1)
                             ->required(),
+                    ]),
+
+                Schemas\Components\Section::make('Kurban Kaydı')
+                    ->description('Kurban kategorisi seçildiyse listeden bir kayıt seçebilirsiniz')
+                    ->icon('heroicon-o-user-group')
+                    ->visible(fn (): bool => $this->activeIsKurban)
+                    ->schema([
+                        Forms\Components\Select::make('kurban_entry_id')
+                            ->label('Kurban Listesinden Seç')
+                            ->placeholder('Ödenmemiş kurban kaydı seçin (opsiyonel)')
+                            ->options(function (): array {
+                                $entries = KurbanEntry::query()
+                                    ->where('company_id', session('active_company_id'))
+                                    ->where('is_paid', false)
+                                    ->whereNull('safe_transaction_id')
+                                    ->with(['list.season', 'list.collector', 'contact'])
+                                    ->get();
+
+                                return $entries->mapWithKeys(function (KurbanEntry $entry): array {
+                                    $seasonYear = $entry->list?->season?->year ?? '?';
+                                    $collectorName = $entry->list?->collector?->name ?? '?';
+
+                                    return [
+                                        $entry->id => sprintf(
+                                            '%s %s — %s / %s',
+                                            $entry->contact?->first_name ?? '?',
+                                            $entry->contact?->last_name ?? '?',
+                                            $seasonYear,
+                                            $collectorName
+                                        ),
+                                    ];
+                                })->toArray();
+                            })
+                            ->searchable()
+                            ->nullable()
+                            ->helperText('Kurban kategorisi seçildiğinde ödenmemiş kayıtlar burada listelenir.')
+                            ->columnSpanFull(),
                     ]),
 
                 Schemas\Components\Section::make('İşlem Detayları')
@@ -230,7 +246,7 @@ class CreateIncomeSafeTransaction extends CreateRecord
                                             return [];
                                         }
 
-                                        return $this->buildContactOptions($this->activeContactType);
+                                        return $this->buildContactOptions($this->activeContactType, $this->activeIsKurban);
                                     })
                                     ->searchable()
                                     ->prefixIcon('heroicon-o-user-group')
@@ -244,6 +260,9 @@ class CreateIncomeSafeTransaction extends CreateRecord
 
     protected function handleRecordCreation(array $data): Model
     {
+        $kurbanEntryId = $data['kurban_entry_id'] ?? null;
+        unset($data['kurban_entry_id']);
+
         $items = collect($data['items'] ?? [])->map(fn (array $item): array => [
             'transaction_category_id' => (int) $item['transaction_category_id'],
             'amount'                  => (float) ($item['amount'] ?? 0),
@@ -262,7 +281,21 @@ class CreateIncomeSafeTransaction extends CreateRecord
         ];
 
         try {
-            return app(SafeTransactionService::class)->create($payload);
+            $transaction = app(SafeTransactionService::class)->create($payload);
+
+            // Eğer kurban entry seçildiyse, ödendi olarak işaretle
+            if ($kurbanEntryId !== null) {
+                $kurbanEntry = KurbanEntry::find($kurbanEntryId);
+                if ($kurbanEntry !== null) {
+                    $kurbanEntry->update([
+                        'is_paid'              => true,
+                        'paid_date'            => $data['process_date'],
+                        'safe_transaction_id'  => $transaction->id,
+                    ]);
+                }
+            }
+
+            return $transaction;
         } catch (\RuntimeException $e) {
             Notification::make()
                 ->danger()
@@ -279,62 +312,4 @@ class CreateIncomeSafeTransaction extends CreateRecord
         return $this->getResource()::getUrl('index');
     }
 
-    /**
-     * @return array<int|string, string>
-     */
-    private static function buildCategoryOptions(string $type): array
-    {
-        $parents = SafeTransactionCategory::query()
-            ->forActiveCompany()
-            ->where('type', $type)
-            ->where('is_active', true)
-            ->whereNull('parent_id')
-            ->orderBy('sort_order')
-            ->get();
-
-        $options = [];
-
-        foreach ($parents as $parent) {
-            $children = SafeTransactionCategory::query()
-                ->forActiveCompany()
-                ->where('type', $type)
-                ->where('is_active', true)
-                ->where('parent_id', $parent->id)
-                ->orderBy('sort_order')
-                ->get();
-
-            if ($children->isEmpty()) {
-                $options[$parent->id] = $parent->name;
-            } else {
-                $options[$parent->id] = $parent->name . ' (Seçilemez)';
-
-                foreach ($children as $child) {
-                    $options[$child->id] = '⤷ ' . $parent->name . ' → ' . $child->name;
-                }
-            }
-        }
-
-        return $options;
-    }
-
-    /**
-     * @return array<int, string>
-     */
-    private function buildContactOptions(ContactType $contactType): array
-    {
-        $column = match ($contactType) {
-            ContactType::DONOR         => 'is_donor',
-            ContactType::AID_RECIPIENT => 'is_aid_recipient',
-            ContactType::STUDENT       => 'is_student',
-        };
-
-        return Contact::query()
-            ->where($column, true)
-            ->orderBy('first_name')
-            ->get()
-            ->mapWithKeys(fn (Contact $c): array => [
-                $c->id => $c->first_name . ' ' . $c->last_name . ($c->phone ? ' (' . $c->phone . ')' : ''),
-            ])
-            ->toArray();
-    }
 }
