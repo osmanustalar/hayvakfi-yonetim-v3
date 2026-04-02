@@ -62,6 +62,41 @@ class KurbanList extends Model
         return $this->hasMany(KurbanEntry::class, 'kurban_list_id');
     }
 
+    public function bulkTransactions(): HasMany
+    {
+        return $this->hasMany(SafeTransaction::class, 'kurban_list_id');
+    }
+
+    public function getTotalSharesAttribute(): int
+    {
+        return $this->entries()->count();
+    }
+
+    public function getIndividualPaidSharesAttribute(): int
+    {
+        return $this->entries()->where('is_paid', true)->count();
+    }
+
+    public function getBulkPaidSharesAttribute(): int
+    {
+        return (int) $this->bulkTransactions()->sum('share_count');
+    }
+
+    public function getTotalPaidSharesAttribute(): int
+    {
+        return $this->individual_paid_shares + $this->bulk_paid_shares;
+    }
+
+    public function getRemainingSharesAttribute(): int
+    {
+        return max(0, $this->total_shares - $this->total_paid_shares);
+    }
+    
+    public function getIsCompletedAttribute(): bool
+    {
+        return $this->total_paid_shares >= $this->total_shares && $this->total_shares > 0;
+    }
+
     public function getTitle(): string
     {
         return ($this->season?->year ?? '?').' - '.($this->collector?->name ?? '?');

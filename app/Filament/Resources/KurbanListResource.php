@@ -11,6 +11,7 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
@@ -97,23 +98,23 @@ class KurbanListResource extends Resource
                     ->sortable()
                     ->searchable(),
 
-                TextColumn::make('entries_count')
-                    ->label('Toplam Kayıt')
-                    ->counts('entries')
+                TextColumn::make('total_shares')
+                    ->label('Toplam Hisse')
+                    ->getStateUsing(fn ($record) => $record->total_shares)
                     ->badge()
                     ->color('gray'),
 
-                TextColumn::make('paid_entries_count')
-                    ->label('Ödenen')
-                    ->getStateUsing(fn ($record) => $record->entries()->where('is_paid', true)->count())
+                TextColumn::make('total_paid_shares')
+                    ->label('Ödenen Hisse')
+                    ->getStateUsing(fn ($record) => $record->total_paid_shares)
                     ->badge()
                     ->color('success'),
 
-                TextColumn::make('unpaid_entries_count')
-                    ->label('Ödenmemiş')
-                    ->getStateUsing(fn ($record) => $record->entries()->where('is_paid', false)->count())
+                TextColumn::make('remaining_shares')
+                    ->label('Kalan Hisse')
+                    ->getStateUsing(fn ($record) => $record->remaining_shares)
                     ->badge()
-                    ->color('danger'),
+                    ->color(fn ($state) => $state > 0 ? 'warning' : 'success'),
 
                 IconColumn::make('is_active')
                     ->label('Aktif')
@@ -140,6 +141,68 @@ class KurbanListResource extends Resource
             ->actions([
                 ViewAction::make()->label('Görüntüle'),
                 EditAction::make()->label('Düzenle'),
+                Action::make('bulk_payment')
+                    ->label('Toplu Tahsilat Al')
+                    ->icon('heroicon-o-currency-dollar')
+                    ->color('success')
+                    ->form([
+                        \Filament\Forms\Components\Select::make('safe_id')
+                            ->label('Kasa / Banka')
+                            ->options(\App\Models\Safe::query()
+                                ->whereHas('safeGroup', fn ($q) => $q->where('is_api_integration', false))
+                                ->pluck('name', 'id')
+                            )
+                            ->required(),
+                        \Filament\Forms\Components\Select::make('transaction_category_id')
+                            ->label('Tahsilat Kategorisi (Kurban Türü)')
+                            ->options(\App\Models\SafeTransactionCategory::query()
+                                ->where('is_sacrifice_type', true)
+                                ->where('is_active', true)
+                                ->pluck('name', 'id')
+                            )
+                            ->required(),
+                        \Filament\Forms\Components\TextInput::make('share_count')
+                            ->label('Tahsil Edilen Hisse Adedi')
+                            ->numeric()
+                            ->default(fn ($record) => $record->remaining_shares)
+                            ->maxValue(fn ($record) => $record->remaining_shares)
+                            ->minValue(1)
+                            ->required(),
+                        \Filament\Forms\Components\TextInput::make('amount')
+                            ->label('Toplam Tutar')
+                            ->numeric()
+                            ->required(),
+                        \Filament\Forms\Components\DatePicker::make('process_date')
+                            ->label('İşlem Tarihi')
+                            ->default(now())
+                            ->required(),
+                        \Filament\Forms\Components\Textarea::make('description')
+                            ->label('Açıklama')
+                            ->nullable(),
+                    ])
+                    ->action(function (KurbanList $record, array $data) {
+                        app(\App\Services\SafeTransactionService::class)->create([
+                            'safe_id' => $data['safe_id'],
+                            'type' => \App\Enums\TransactionType::INCOME->value,
+                            'total_amount' => $data['amount'],
+                            'share_count' => $data['share_count'],
+                            'kurban_list_id' => $record->id,
+                            'process_date' => $data['process_date'],
+                            'description' => $data['description'],
+                            'items' => [
+                                [
+                                    'transaction_category_id' => $data['transaction_category_id'],
+                                    'amount' => $data['amount'],
+                                ]
+                            ]
+                        ]);
+
+                        \Filament\Notifications\Notification::make()
+                            ->title('Toplu tahsilat başarıyla alındı.')
+                            ->success()
+                            ->send();
+                    })
+                    ->visible(fn (KurbanList $record) => $record->remaining_shares > 0),
             ])
             ->bulkActions([
                 BulkActionGroup::make([

@@ -39,6 +39,8 @@ class SafeTransaction extends Model
         'import_file',
         'is_show',
         'description',
+        'kurban_list_id',
+        'share_count',
     ];
 
     protected function casts(): array
@@ -104,5 +106,10 @@ class SafeTransaction extends Model
     public function items(): HasMany
     {
         return $this->hasMany(SafeTransactionItem::class, 'transaction_id');
+    }
+
+    public function kurbanList(): BelongsTo
+    {
+        return $this->belongsTo(KurbanList::class, 'kurban_list_id');
     }
 }
