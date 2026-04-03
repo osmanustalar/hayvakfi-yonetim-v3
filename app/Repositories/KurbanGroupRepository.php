@@ -20,7 +20,13 @@ class KurbanGroupRepository
 
     public function delete(int $id): bool
     {
-        return KurbanGroup::findOrFail($id)->delete();
+        $group = KurbanGroup::findOrFail($id);
+        
+        // Grup numarasını boşa çıkar ki başkası alabilsin
+        $group->group_no = null;
+        $group->save();
+
+        return $group->delete();
     }
 
     /**
@@ -40,14 +46,27 @@ class KurbanGroupRepository
     }
 
     /**
-     * Sezon için bir sonraki grup numarasını hesapla.
+     * Sezon için bir sonraki veya aradaki ilk boş grup numarasını hesapla.
      */
     public function nextGroupNo(int $companyId, int $seasonId): int
     {
-        $max = KurbanGroup::where('company_id', $companyId)
+        $existing = KurbanGroup::where('company_id', $companyId)
             ->where('kurban_season_id', $seasonId)
-            ->max('group_no');
+            ->whereNotNull('group_no')
+            ->pluck('group_no')
+            ->sort()
+            ->toArray();
 
-        return ($max ?? 0) + 1;
+        $next = 1;
+        foreach ($existing as $no) {
+            if ($no > $next) {
+                return $next;
+            }
+            if ($no == $next) {
+                $next++;
+            }
+        }
+
+        return $next;
     }
 }

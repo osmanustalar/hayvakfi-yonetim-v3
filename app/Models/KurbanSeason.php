@@ -21,6 +21,9 @@ class KurbanSeason extends Model
     protected $fillable = [
         'company_id',
         'year',
+        'code',
+        'logo1',
+        'logo2',
         'price_try',
         'price_eur',
         'default_livestock_type',
@@ -68,5 +71,12 @@ class KurbanSeason extends Model
     public function entries(): HasManyThrough
     {
         return $this->hasManyThrough(KurbanEntry::class, KurbanList::class, 'kurban_season_id', 'kurban_list_id');
+    }
+
+    public function groupCode(int $groupNo): string
+    {
+        $yearShort = substr((string) $this->year, -2);
+        $groupPadded = str_pad((string) $groupNo, 4, '0', STR_PAD_LEFT);
+        return ($this->code ?? '') . $yearShort . $groupPadded;
     }
 }

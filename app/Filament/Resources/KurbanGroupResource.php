@@ -101,10 +101,6 @@ class KurbanGroupResource extends Resource
                     ->label('Notlar')
                     ->limit(50)
                     ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('entries.list.collector.name')
-                    ->label('İlgili Listeler')
-                    ->listWithLineBreaks()
-                    ->bulleted(),
             ])
             ->filters([
                 SelectFilter::make('kurban_list_id')
@@ -135,6 +131,14 @@ class KurbanGroupResource extends Resource
                         'kurban_group_id' => ['value' => (string) $record->id],
                     ],
                 ])
+            )
+            ->defaultSort('group_no', 'desc')
+            ->modifyQueryUsing(fn ($query) => $query
+                ->leftJoin('kurban_seasons', 'kurban_groups.kurban_season_id', '=', 'kurban_seasons.id')
+                ->orderByDesc('kurban_seasons.year')
+                ->orderByDesc('kurban_groups.group_no')
+                ->select('kurban_groups.*')
+                ->with(['entries' => fn($q) => $q->orderBy('queue_number')->with(['contact', 'sacrificeCategory', 'list.collector'])])
             )
             ->searchable();
     }

@@ -11,6 +11,7 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -61,6 +62,13 @@ class KurbanSeasonResource extends Resource
                                     ->minValue(2020)
                                     ->maxValue(2050),
 
+                                TextInput::make('code')
+                                    ->label('Sezon Kodu')
+                                    ->nullable()
+                                    ->maxLength(10)
+                                    ->placeholder('MGL')
+                                    ->helperText('Grup kodunda kullanılır: MGL250101'),
+
                                 Toggle::make('is_active')
                                     ->label('Aktif')
                                     ->default(true),
@@ -90,6 +98,27 @@ class KurbanSeasonResource extends Resource
                             ->nullable()
                             ->rows(4)
                             ->columnSpanFull(),
+                    ]),
+
+                Section::make('Yazdırma Logoları')
+                    ->icon('heroicon-o-photo')
+                    ->schema([
+                        Grid::make(2)->schema([
+                            FileUpload::make('logo1')
+                                ->label('Logo 1 (Bayraklar)')
+                                ->image()
+                                ->disk('public')
+                                ->directory('kurban-logos')
+                                ->imagePreviewHeight('80')
+                                ->nullable(),
+                            FileUpload::make('logo2')
+                                ->label('Logo 2 (Vakıf / Başlık)')
+                                ->image()
+                                ->disk('public')
+                                ->directory('kurban-logos')
+                                ->imagePreviewHeight('80')
+                                ->nullable(),
+                        ]),
                     ]),
             ]);
     }
