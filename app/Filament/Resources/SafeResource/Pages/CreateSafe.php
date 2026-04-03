@@ -7,9 +7,9 @@ namespace App\Filament\Resources\SafeResource\Pages;
 use App\Filament\Resources\SafeResource;
 use App\Models\Safe;
 use App\Services\SafeService;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord;
 
-class CreateSafe extends CreateRecord
+class CreateSafe extends BaseCreateRecord
 {
     protected static string $resource = SafeResource::class;
 

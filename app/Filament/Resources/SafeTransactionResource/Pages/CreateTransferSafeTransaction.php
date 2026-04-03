@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\SafeTransactionResource\Pages;
 
+use App\Filament\Pages\BaseCreateRecord;
 use App\Filament\Resources\SafeTransactionResource;
 use App\Models\Safe;
 use App\Models\User;
 use App\Services\SafeTransactionService;
 use Filament\Forms;
 use Filament\Notifications\Notification;
-use Filament\Resources\Pages\CreateRecord;
 use Filament\Schemas;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Model;
 
-class CreateTransferSafeTransaction extends CreateRecord
+class CreateTransferSafeTransaction extends BaseCreateRecord
 {
     protected static string $resource = SafeTransactionResource::class;
 

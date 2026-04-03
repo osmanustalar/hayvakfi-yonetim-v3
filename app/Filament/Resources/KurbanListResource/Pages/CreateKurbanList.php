@@ -7,9 +7,9 @@ namespace App\Filament\Resources\KurbanListResource\Pages;
 use App\Filament\Resources\KurbanListResource;
 use App\Models\KurbanList;
 use App\Services\KurbanListService;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord;
 
-class CreateKurbanList extends CreateRecord
+class CreateKurbanList extends BaseCreateRecord
 {
     protected static string $resource = KurbanListResource::class;
 

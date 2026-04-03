@@ -7,9 +7,9 @@ namespace App\Filament\Resources\ContactResource\Pages;
 use App\Filament\Resources\ContactResource;
 use App\Models\Contact;
 use App\Services\ContactService;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord;
 
-class CreateContact extends CreateRecord
+class CreateContact extends BaseCreateRecord
 {
     protected static string $resource = ContactResource::class;
 

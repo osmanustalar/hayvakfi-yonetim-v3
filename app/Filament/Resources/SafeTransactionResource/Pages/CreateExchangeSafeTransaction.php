@@ -6,6 +6,7 @@ namespace App\Filament\Resources\SafeTransactionResource\Pages;
 
 use App\Enums\OperationType;
 use App\Enums\TransactionType;
+use App\Filament\Pages\BaseCreateRecord;
 use App\Filament\Resources\SafeTransactionResource;
 use App\Models\Safe;
 use App\Models\SafeTransaction;
@@ -14,7 +15,6 @@ use App\Repositories\SafeTransactionItemRepository;
 use App\Repositories\SafeTransactionRepository;
 use Filament\Forms;
 use Filament\Notifications\Notification;
-use Filament\Resources\Pages\CreateRecord;
 use Filament\Schemas;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
@@ -22,7 +22,7 @@ use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
-class CreateExchangeSafeTransaction extends CreateRecord
+class CreateExchangeSafeTransaction extends BaseCreateRecord
 {
     protected static string $resource = SafeTransactionResource::class;
 

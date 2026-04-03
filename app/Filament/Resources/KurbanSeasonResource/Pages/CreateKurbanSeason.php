@@ -7,9 +7,9 @@ namespace App\Filament\Resources\KurbanSeasonResource\Pages;
 use App\Filament\Resources\KurbanSeasonResource;
 use App\Models\KurbanSeason;
 use App\Services\KurbanSeasonService;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord;
 
-class CreateKurbanSeason extends CreateRecord
+class CreateKurbanSeason extends BaseCreateRecord
 {
     protected static string $resource = KurbanSeasonResource::class;
 

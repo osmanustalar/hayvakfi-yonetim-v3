@@ -11,7 +11,10 @@ use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ManageRecords;
+use Filament\Support\Exceptions\Halt;
+use Illuminate\Support\Facades\Cache;
 
 class ManageKurbanGroups extends ManageRecords
 {
@@ -49,6 +52,21 @@ class ManageKurbanGroups extends ManageRecords
                 }),
 
             CreateAction::make()
+                ->before(function (): void {
+                    $cacheKey = 'form_submit_' . auth()->id();
+
+                    if (Cache::has($cacheKey)) {
+                        Notification::make()
+                            ->warning()
+                            ->title('İşleminiz devam ediyor. Lütfen biraz bekleyin.')
+                            ->persistent()
+                            ->send();
+
+                        throw new Halt;
+                    }
+
+                    Cache::put($cacheKey, true, 10);
+                })
                 ->mutateFormDataUsing(function (array $data): array {
                     $data['company_id'] = session('active_company_id');
                     $data['created_user_id'] = auth()->id();

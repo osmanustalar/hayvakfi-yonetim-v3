@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Filament\Resources\RegionResource\Pages;
 
 use App\Filament\Resources\RegionResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord;
 
-class CreateRegion extends CreateRecord
+class CreateRegion extends BaseCreateRecord
 {
     protected static string $resource = RegionResource::class;
 

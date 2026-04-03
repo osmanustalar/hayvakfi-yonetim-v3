@@ -6,6 +6,7 @@ namespace App\Filament\Resources\SafeTransactionResource\Pages;
 
 use App\Enums\ContactType;
 use App\Enums\TransactionType;
+use App\Filament\Pages\BaseCreateRecord;
 use App\Filament\Resources\SafeTransactionResource;
 use App\Helpers\Helper;
 use App\Models\KurbanEntry;
@@ -15,7 +16,6 @@ use App\Services\SafeTransactionService;
 use App\Traits\HasSafeIncomeFormHelpers;
 use Filament\Forms;
 use Filament\Notifications\Notification;
-use Filament\Resources\Pages\CreateRecord;
 use Filament\Schemas;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
@@ -23,7 +23,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\RawJs;
 use Illuminate\Database\Eloquent\Model;
 
-class CreateIncomeSafeTransaction extends CreateRecord
+class CreateIncomeSafeTransaction extends BaseCreateRecord
 {
     use HasSafeIncomeFormHelpers;
 

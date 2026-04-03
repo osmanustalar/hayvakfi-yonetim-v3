@@ -45,6 +45,7 @@ class KurbanEntryService
                 })
                 ->whereNotNull('queue_number')
                 ->orderBy('queue_number')
+                ->lockForUpdate()
                 ->pluck('queue_number')
                 ->toArray();
 

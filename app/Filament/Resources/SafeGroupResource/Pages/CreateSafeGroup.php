@@ -7,9 +7,9 @@ namespace App\Filament\Resources\SafeGroupResource\Pages;
 use App\Filament\Resources\SafeGroupResource;
 use App\Models\SafeGroup;
 use App\Services\SafeGroupService;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord;
 
-class CreateSafeGroup extends CreateRecord
+class CreateSafeGroup extends BaseCreateRecord
 {
     protected static string $resource = SafeGroupResource::class;
 

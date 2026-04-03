@@ -7,9 +7,9 @@ namespace App\Filament\Resources\SafeTransactionCategoryResource\Pages;
 use App\Filament\Resources\SafeTransactionCategoryResource;
 use App\Models\SafeTransactionCategory;
 use App\Services\SafeTransactionCategoryService;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord;
 
-class CreateSafeTransactionCategory extends CreateRecord
+class CreateSafeTransactionCategory extends BaseCreateRecord
 {
     protected static string $resource = SafeTransactionCategoryResource::class;
 

@@ -7,9 +7,9 @@ namespace App\Filament\Resources\KurbanEntryResource\Pages;
 use App\Filament\Resources\KurbanEntryResource;
 use App\Models\KurbanEntry;
 use App\Services\KurbanEntryService;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord;
 
-class CreateKurbanEntry extends CreateRecord
+class CreateKurbanEntry extends BaseCreateRecord
 {
     protected static string $resource = KurbanEntryResource::class;
 

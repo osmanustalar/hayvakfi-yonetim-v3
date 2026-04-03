@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Filament\Resources\CompanyResource\Pages;
 
 use App\Filament\Resources\CompanyResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Pages\BaseCreateRecord;
 
-class CreateCompany extends CreateRecord
+class CreateCompany extends BaseCreateRecord
 {
     protected static string $resource = CompanyResource::class;
 
