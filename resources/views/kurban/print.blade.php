@@ -121,7 +121,13 @@ function trUpper(string $s): string {
 }
 @endphp
 
-@foreach($groups as $group)
+@foreach($groupsWithAssets as $item)
+@php
+    $group = $item['group'];
+    $logo1 = $item['logo1'];
+    $logo2 = $item['logo2'];
+    $code = $item['code'];
+@endphp
 <div class="group-page">
 
     @if($logo1)

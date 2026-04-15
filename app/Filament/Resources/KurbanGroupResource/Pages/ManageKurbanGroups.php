@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Filament\Resources\KurbanGroupResource\Pages;
 
 use App\Filament\Resources\KurbanGroupResource;
+use App\Models\KurbanList;
 use App\Models\KurbanSeason;
 use App\Repositories\KurbanGroupRepository;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ManageRecords;
 use Filament\Support\Exceptions\Halt;
@@ -24,15 +26,25 @@ class ManageKurbanGroups extends ManageRecords
     {
         return [
             Action::make('print')
-                ->label('Yazdır')
-                ->icon('heroicon-o-printer')
-                ->color('gray')
+                ->label('PDF İndir')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('success')
                 ->form([
                     Select::make('season_id')
                         ->label('Sezon')
                         ->options(fn () => KurbanSeason::orderByDesc('year')->pluck('year', 'id')->map(fn ($y) => $y . ' Yılı Kurban Sezonu'))
-                        ->default(fn () => KurbanSeason::where('is_active', true)->first()?->id) // Aktif sezonu varsayılan seç
+                        ->default(fn () => KurbanSeason::where('is_active', true)->first()?->id)
                         ->required()
+                        ->live()
+                        ->searchable(),
+                    Select::make('list_id')
+                        ->label('Liste (Opsiyonel)')
+                        ->options(fn (Get $get) => KurbanList::with(['season', 'collector'])
+                            ->where('kurban_season_id', $get('season_id') ?? 0)
+                            ->get()
+                            ->mapWithKeys(fn (KurbanList $l) => [$l->id => $l->getTitle()])
+                        )
+                        ->placeholder('Tümü')
                         ->searchable(),
                     TextInput::make('start')
                         ->label('Başlangıç Grup No')
@@ -46,8 +58,9 @@ class ManageKurbanGroups extends ManageRecords
                 ->action(function (array $data) {
                     return redirect()->to(route('kurban.print', [
                         'season' => $data['season_id'],
-                        'start' => $data['start'] ?? null,
-                        'end' => $data['end'] ?? null,
+                        'list'   => $data['list_id'] ?? null,
+                        'start'  => $data['start'] ?? null,
+                        'end'    => $data['end'] ?? null,
                     ]));
                 }),
 

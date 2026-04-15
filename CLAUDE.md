@@ -210,6 +210,7 @@ safe_transaction_categories   -- Self-referential hiyerarşi
   parent_id                   (FK: safe_transaction_categories — nullable),
   sort_order, is_active,
   is_disable_in_report        (bool — transfer/döviz/sistem kategorilerini raporda gizler),
+  is_sacrifice_type           (bool — kurban türü kategorileri için, yalnızca Vacip ve Nafile: true),
   contact_type                (ENUM: donor/aid_recipient/student — nullable),
   color                       (varchar 10),
   description                 (nullable),
@@ -223,17 +224,19 @@ safe_transaction_categories   -- Self-referential hiyerarşi
 --   ID 2 → Döviz İşlemleri                   (is_disable_in_report: true)
 --   ID 3 → ATAMA BEKLİYOR                    (is_disable_in_report: false)
 --   ID 4 → Açılış                            (income, is_active: false)
---   ID 5 → Bağış - Kurban                    (income, parent: null)
---            └── Genel Bağış     (parent: 5)
---            └── Zekat Bağışı    (parent: 5)
---            └── Akika Kurbanı   (parent: 5)
---            └── Vacip Kurbanı   (parent: 5)
---            └── Adak Kurbanı    (parent: 5)
---            └── Sadaka Kurbanı  (parent: 5)
+--   ID 5 → Bağış                             (income, parent: null)
+--            └── Genel           (parent: 5)
+--            └── Zekat           (parent: 5)
 --            └── Fitre           (parent: 5)
 --            └── Kumanya         (parent: 5)
 --            └── Öğrenci İftarı  (parent: 5)
 --            └── Hatim           (parent: 5)
+--   ID 12 → Kurban                           (income, parent: null)
+--            └── Vacip           (parent: 12, is_sacrifice_type: true)
+--            └── Akika           (parent: 12, is_sacrifice_type: false)
+--            └── Sadaka          (parent: 12, is_sacrifice_type: false)
+--            └── Adak            (parent: 12, is_sacrifice_type: false)
+--            └── Nafile          (parent: 12, is_sacrifice_type: true)
 ```
 
 ### 7.5 Kasa İşlemleri
@@ -429,3 +432,24 @@ Kasa özeti, kategori dağılımı, kurban raporu, bağışçı raporu, aidat ra
 | `StudentEnrollmentResource` | Eğitim |
 | `StudentFeeResource` | Eğitim |
 | `AidResource` | Yardım |
+
+---
+
+## 12. FİLAMENT HEADER ACTION BUTON RENK STANDARTLARI
+
+Tüm Filament Resource sayfalarında header action butonları için tutarlı renk kullanımı:
+
+| Aksiyon Tipi | Renk | Örnek |
+|--------------|------|-------|
+| **CreateAction** | (varsayılan) | `CreateAction::make()` — renk belirtilmez, Filament `primary` kullanır |
+| **EditAction** | (varsayılan) | `EditAction::make()` — renk belirtilmez, Filament `primary` kullanır |
+| **DeleteAction** | (varsayılan) | `DeleteAction::make()` — renk belirtilmez, Filament `danger` kullanır |
+| **PDF İndir / Excel İndir / Export** | `success` (yeşil) | `Action::make('export')->color('success')` |
+| **Yazdır / Download** | `success` (yeşil) | `Action::make('print')->color('success')` |
+| **İptal / Geri / İkincil aksiyonlar** | `gray` | `Action::make('cancel')->color('gray')` |
+
+**Kurallar:**
+- Download/Export/PDF/Excel türü tüm butonlar → `color('success')`
+- Create/Edit/Delete için Filament varsayılanlarını kullan (renk belirtme)
+- İptal veya ikincil aksiyonlar → `color('gray')`
+- Tehlikeli işlemler (geri alınamaz) → `color('danger')`

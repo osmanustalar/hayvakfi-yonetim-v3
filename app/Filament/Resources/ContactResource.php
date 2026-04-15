@@ -6,12 +6,11 @@ namespace App\Filament\Resources;
 
 use App\Enums\LivestockType;
 use App\Filament\Resources\ContactResource\Pages;
+use App\Filament\Resources\KurbanEntryResource;
 use App\Models\Contact;
-use App\Models\KurbanEntry;
-use App\Models\KurbanList;
 use App\Models\KurbanSeason;
 use App\Models\Region;
-use App\Models\SafeTransactionCategory;
+use App\Services\KurbanEntryService;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -27,7 +26,6 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -259,70 +257,23 @@ class ContactResource extends Resource
                         $activeSeason = KurbanSeason::query()
                             ->where('company_id', session('active_company_id'))
                             ->where('is_active', true)
-                            ->with('lists.season')
+                            ->with('lists.season', 'lists.collector')
                             ->first();
 
                         $lists = $activeSeason?->lists ?? collect();
 
-                        return [
-                            Select::make('kurban_list_id')
-                                ->label('Kurban Listesi')
-                                ->required()
-                                ->options(
-                                    $lists->mapWithKeys(fn (KurbanList $l): array => [
-                                        $l->id => ($l->season?->year ?? '?').' — '.($l->collector?->name ?? 'Toplayıcı yok'),
-                                    ])->toArray()
-                                )
-                                ->live()
-                                ->afterStateUpdated(function (?int $state, Set $set): void {
-                                    if ($state === null) {
-                                        return;
-                                    }
-                                    $list = KurbanList::with('season')->find($state);
-                                    if ($list?->season?->default_livestock_type !== null) {
-                                        $set('livestock_type', $list->season->default_livestock_type->value);
-                                    }
-                                })
-                                ->searchable()
-                                ->prefixIcon('heroicon-o-list-bullet'),
-
-                            Select::make('livestock_type')
-                                ->label('Hayvan Türü (Hisse)')
-                                ->required()
-                                ->options(collect(LivestockType::cases())->mapWithKeys(fn (LivestockType $t) => [$t->value => $t->label()])->toArray())
-                                ->default(fn (): string => $activeSeason?->default_livestock_type?->value ?? LivestockType::LARGE->value)
-                                ->prefixIcon('heroicon-o-tag'),
-
-                            Select::make('sacrifice_category_id')
-                                ->label('Kurban Türü')
-                                ->required()
-                                ->options(
-                                    SafeTransactionCategory::query()
-                                        ->where('is_sacrifice_type', true)
-                                        ->where('is_active', true)
-                                        ->orderBy('sort_order')
-                                        ->get()
-                                        ->mapWithKeys(fn ($c) => [$c->id => $c->name])
-                                        ->toArray()
-                                )
-                                ->searchable()
-                                ->prefixIcon('heroicon-o-tag'),
-
-                            Textarea::make('notes')
-                                ->label('Notlar')
-                                ->nullable()
-                                ->rows(3),
-                        ];
+                        return KurbanEntryResource::getSharedEntryFormFields(
+                            listOptions: $lists->mapWithKeys(fn ($l) => [$l->id => $l->getTitle()])->toArray(),
+                            livestockTypeDefault: $activeSeason?->default_livestock_type?->value ?? LivestockType::LARGE->value,
+                        );
                     })
-                    ->action(function (Contact $record, array $data): void {
-                        KurbanEntry::create([
-                            'company_id' => session('active_company_id'),
+                    ->action(function (Contact $record, array $data, KurbanEntryService $service): void {
+                        $service->create([
                             'kurban_list_id' => (int) $data['kurban_list_id'],
                             'contact_id' => $record->id,
                             'sacrifice_category_id' => (int) $data['sacrifice_category_id'],
                             'livestock_type' => $data['livestock_type'],
                             'notes' => $data['notes'] ?? null,
-                            'created_user_id' => auth()->id(),
                         ]);
 
                         Notification::make()

@@ -158,28 +158,30 @@ class SafeTransactionCategorySeeder extends Seeder
             ]
         );
 
-        // Kurban alt kategorileri (ID 13-16, parent_id: 12, is_sacrifice_type: true)
+        // Kurban alt kategorileri (ID 13-17, parent_id: 12)
+        // Sadece Vacip ve Nafile kurban türü olarak işaretlenecek (is_sacrifice_type: true)
         $sacrificeSubcategories = [
-            13 => 'Vacip Kurban',
-            14 => 'Akika Kurbanı',
-            15 => 'Sadaka Kurbanı',
-            16 => 'Adak Kurbanı',
+            13 => ['name' => 'Vacip', 'is_sacrifice_type' => true],
+            14 => ['name' => 'Akika', 'is_sacrifice_type' => false],
+            15 => ['name' => 'Sadaka', 'is_sacrifice_type' => false],
+            16 => ['name' => 'Adak', 'is_sacrifice_type' => false],
+            17 => ['name' => 'Nafile', 'is_sacrifice_type' => true],
         ];
 
         $sortOrder = 0;
-        foreach ($sacrificeSubcategories as $id => $name) {
+        foreach ($sacrificeSubcategories as $id => $data) {
             $sortOrder += 10;
             SafeTransactionCategory::updateOrCreate(
                 ['id' => $id],
                 [
                     'company_id' => null,
-                    'name' => $name,
+                    'name' => $data['name'],
                     'type' => 'income',
                     'parent_id' => 12,
                     'sort_order' => $sortOrder,
                     'is_active' => true,
                     'is_disable_in_report' => false,
-                    'is_sacrifice_type' => true,
+                    'is_sacrifice_type' => $data['is_sacrifice_type'],
                     'contact_type' => 'donor',
                     'color' => null,
                     'description' => null,

@@ -6,7 +6,6 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Artisan;
-use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 class ShieldSeeder extends Seeder
@@ -17,20 +16,18 @@ class ShieldSeeder extends Seeder
      */
     public function run(): void
     {
-        // Generate permissions and policies
+        // Generate permissions only for resources (pages/widgets cause hangs with --all)
         Artisan::call('shield:generate', [
-            '--all' => true,
-            '--panel' => 'admin',
+            '--all'    => true,
+            '--option' => 'permissions',
+            '--panel'  => 'admin',
         ]);
 
-        // Get or create super_admin role
-        $superAdminRole = Role::firstOrCreate(
+        // super_admin is handled via gate (define_via_gate: true in config),
+        // so no need to sync permissions explicitly — just ensure the role exists.
+        Role::firstOrCreate(
             ['name' => 'super_admin'],
             ['guard_name' => 'web']
         );
-
-        // Get all permissions and assign to super_admin
-        $allPermissions = Permission::all();
-        $superAdminRole->syncPermissions($allPermissions);
     }
 }

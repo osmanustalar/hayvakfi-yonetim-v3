@@ -58,7 +58,7 @@ return new class extends Migration
             'first_name' => 'Bilinmeyen',
             'last_name' => 'Kişi',
             'is_donor' => true,
-            'created_user_id' => 1,
+            'created_user_id' => null,
             'created_at' => now(),
             'updated_at' => now(),
         ]);

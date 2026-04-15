@@ -8,10 +8,12 @@ use App\Filament\Resources\KurbanGroupResource\Pages;
 use App\Filament\Resources\KurbanEntryResource;
 use App\Models\KurbanGroup;
 use App\Models\KurbanList;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Actions\DeleteAction;
@@ -41,15 +43,48 @@ class KurbanGroupResource extends Resource
         return $form
             ->schema([
                 Section::make('Grup Bilgileri')
+                    ->icon('heroicon-o-users')
                     ->schema([
                         Select::make('kurban_season_id')
                             ->label('Sezon')
                             ->relationship('season', 'year')
                             ->required(),
+
+                        TextInput::make('code')
+                            ->label('Grup Kodu (Opsiyonel)')
+                            ->nullable()
+                            ->maxLength(20)
+                            ->placeholder('Boş bırakılırsa sezon kodu kullanılır')
+                            ->helperText('Bu grup için özel kod. Boşsa sezon kodu kullanılır.'),
+
                         Textarea::make('notes')
                             ->label('Notlar')
+                            ->nullable()
+                            ->rows(3)
                             ->columnSpanFull(),
-                    ])->columns(1),
+                    ])->columns(2),
+
+                Section::make('Yazdırma Logoları (Opsiyonel)')
+                    ->icon('heroicon-o-photo')
+                    ->description('Bu grup için özel logolar. Boş bırakılırsa sezon logoları kullanılır.')
+                    ->schema([
+                        Grid::make(2)->schema([
+                            FileUpload::make('logo1')
+                                ->label('Logo 1 (Bayraklar)')
+                                ->image()
+                                ->disk('public')
+                                ->directory('kurban-logos')
+                                ->imagePreviewHeight('80')
+                                ->nullable(),
+                            FileUpload::make('logo2')
+                                ->label('Logo 2 (Vakıf / Başlık)')
+                                ->image()
+                                ->disk('public')
+                                ->directory('kurban-logos')
+                                ->imagePreviewHeight('80')
+                                ->nullable(),
+                        ]),
+                    ])->collapsible(),
             ]);
     }
 

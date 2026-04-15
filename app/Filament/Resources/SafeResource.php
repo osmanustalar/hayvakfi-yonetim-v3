@@ -28,7 +28,6 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\DB;
 
 class SafeResource extends Resource
 {
@@ -55,9 +54,7 @@ class SafeResource extends Resource
     {
         $query = parent::getTableQuery()
             ->with('safeGroup')
-            ->addSelect(DB::raw(
-                '(SELECT MAX(created_at) FROM safe_transactions WHERE safe_id = safes.id) as latest_transaction_date'
-            ));
+            ->withMax('transactions', 'created_at');
 
         // super_admin tüm kasaları görebilir, diğerleri sadece kendilerine atanmış kasaları
         if (! auth()->user()?->hasRole('super_admin')) {

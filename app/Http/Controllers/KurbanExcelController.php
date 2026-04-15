@@ -39,9 +39,9 @@ class KurbanExcelController extends Controller
         $filename = 'kurban-kayitlari-' . $season->year;
 
         if ($listId) {
-            $list = KurbanList::find($listId);
+            $list = KurbanList::with(['season', 'collector'])->find($listId);
             if ($list) {
-                $filename .= '-' . str($list->name)->slug();
+                $filename .= '-' . str($list->getTitle())->slug();
             }
         }
 
@@ -83,7 +83,7 @@ class KurbanExcelController extends Controller
                     $entry->sacrificeCategory?->name ?? '',
                     $entry->livestock_type?->label() ?? '',
                     $entry->group?->group_no ?? '',
-                    $entry->list?->name ?? '',
+                    $entry->list?->getTitle() ?? '',
                     $entry->list?->season?->year ?? '',
                     $entry->is_paid ? 'Evet' : 'Hayır',
                     $entry->paid_date?->format('d.m.Y') ?? '',

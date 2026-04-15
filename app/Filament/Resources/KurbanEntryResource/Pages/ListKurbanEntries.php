@@ -38,9 +38,10 @@ class ListKurbanEntries extends ListRecords
 
                     Select::make('list_id')
                         ->label('Liste (Opsiyonel)')
-                        ->options(fn (Get $get) => KurbanList::where('kurban_season_id', $get('season_id') ?? 0)
-                            ->orderBy('name')
-                            ->pluck('name', 'id')
+                        ->options(fn (Get $get) => KurbanList::with(['season', 'collector'])
+                            ->where('kurban_season_id', $get('season_id') ?? 0)
+                            ->get()
+                            ->mapWithKeys(fn (KurbanList $l) => [$l->id => $l->getTitle()])
                         )
                         ->placeholder('Tümü')
                         ->searchable(),

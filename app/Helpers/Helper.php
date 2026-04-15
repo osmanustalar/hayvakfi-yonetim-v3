@@ -6,7 +6,7 @@ namespace App\Helpers;
 
 class Helper
 {
-    public static function formatSaveMoney($amount): float
+    public static function formatSaveMoney(string|float|int $amount): float
     {
         if (is_string($amount)) {
             $amount = str_replace('.', '', $amount);
@@ -16,7 +16,7 @@ class Helper
         return (float) $amount;
     }
 
-    public static function formatShowMoney($amount): string
+    public static function formatShowMoney(string|float|int $amount): string
     {
         return number_format((float) $amount, 2, ',', '.');
     }

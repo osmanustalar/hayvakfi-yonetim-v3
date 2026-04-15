@@ -22,6 +22,9 @@ class KurbanGroup extends Model
         'company_id',
         'kurban_season_id',
         'group_no',
+        'code',
+        'logo1',
+        'logo2',
         'notes',
         'created_user_id',
     ];

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Models\KurbanGroup;
 use App\Models\KurbanSeason;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
@@ -13,13 +14,15 @@ class KurbanPrintController extends Controller
 {
     public function show(KurbanSeason $season): Response
     {
-        $start = request('start');
-        $end = request('end');
+        $start  = request('start');
+        $end    = request('end');
+        $listId = request('list') ? (int) request('list') : null;
         $filename = "kurban-gruplari-{$season->year}";
 
         $groups = $season->groups()
-            ->when($start, fn($q) => $q->where('group_no', '>=', $start))
-            ->when($end, fn($q) => $q->where('group_no', '<=', $end))
+            ->when($listId, fn ($q) => $q->whereHas('entries', fn ($eq) => $eq->where('kurban_list_id', $listId)))
+            ->when($start, fn ($q) => $q->where('group_no', '>=', $start))
+            ->when($end, fn ($q) => $q->where('group_no', '<=', $end))
             ->with([
                 'entries' => fn ($q) => $q->orderBy('queue_number'),
                 'entries.contact',
@@ -32,10 +35,17 @@ class KurbanPrintController extends Controller
             $filename .= "-" . ($start ?? '1') . "-" . ($end ?? 'son');
         }
 
-        $logo1 = $this->encodeImage($season->logo1);
-        $logo2 = $this->encodeImage($season->logo2);
+        // Her grup için logo ve kod bilgisini hazırla (grup varsa ondan, yoksa sezondan)
+        $groupsWithAssets = $groups->map(function (KurbanGroup $group) use ($season) {
+            return [
+                'group' => $group,
+                'logo1' => $this->encodeImage($group->logo1 ?? $season->logo1),
+                'logo2' => $this->encodeImage($group->logo2 ?? $season->logo2),
+                'code' => $group->code ?? $season->code,
+            ];
+        });
 
-        $pdf = Pdf::loadView('kurban.print', compact('season', 'groups', 'logo1', 'logo2'))
+        $pdf = Pdf::loadView('kurban.print', compact('season', 'groupsWithAssets'))
             ->setPaper('a4', 'portrait');
 
         return $pdf->download($filename . ".pdf");

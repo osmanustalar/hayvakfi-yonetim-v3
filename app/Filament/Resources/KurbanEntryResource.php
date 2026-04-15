@@ -51,6 +51,67 @@ class KurbanEntryResource extends Resource
         return (string) static::getModel()::count();
     }
 
+    /**
+     * Kurban kaydı form alanları — KurbanEntryResource ve ContactResource action'ı tarafından ortak kullanılır.
+     * Bir alanı değiştirmek istersen sadece burayı düzenle.
+     *
+     * @param array|callable $listOptions  Kurban listesi seçenekleri (array veya closure)
+     * @param string|callable $livestockTypeDefault  Hayvan türü varsayılanı
+     * @return array<int, mixed>
+     */
+    public static function getSharedEntryFormFields(
+        array|callable $listOptions,
+        string|callable $livestockTypeDefault,
+    ): array {
+        return [
+            Select::make('kurban_list_id')
+                ->label('Kurban Listesi')
+                ->required()
+                ->options($listOptions)
+                ->searchable()
+                ->preload()
+                ->live()
+                ->prefixIcon('heroicon-o-list-bullet')
+                ->afterStateUpdated(function (?int $state, Set $set): void {
+                    if ($state === null) {
+                        return;
+                    }
+                    $list = KurbanList::with('season')->find($state);
+                    if ($list?->season?->default_livestock_type !== null) {
+                        $set('livestock_type', $list->season->default_livestock_type->value);
+                    }
+                }),
+
+            Select::make('livestock_type')
+                ->label('Hayvan Türü (Hisse)')
+                ->required()
+                ->options(collect(LivestockType::cases())->mapWithKeys(fn (LivestockType $t) => [$t->value => $t->label()])->toArray())
+                ->default($livestockTypeDefault)
+                ->prefixIcon('heroicon-o-tag'),
+
+            Select::make('sacrifice_category_id')
+                ->label('Kurban Türü')
+                ->required()
+                ->options(fn () => SafeTransactionCategory::query()
+                    ->where('is_sacrifice_type', true)
+                    ->where('is_active', true)
+                    ->orderBy('sort_order')
+                    ->get()
+                    ->mapWithKeys(fn ($c) => [$c->id => $c->name])
+                    ->toArray()
+                )
+                ->searchable()
+                ->prefixIcon('heroicon-o-tag'),
+
+            Textarea::make('notes')
+                ->label('Açıklama')
+                ->nullable()
+                ->rows(3)
+                ->placeholder('Varsa özel notlar...')
+                ->columnSpanFull(),
+        ];
+    }
+
     public static function form(Schema $form): Schema
     {
         return $form
@@ -84,67 +145,20 @@ class KurbanEntryResource extends Resource
                     ->description('Kurbanla ilgili detay bilgiler.')
                     ->columns(2)
                     ->schema([
-                        // Satır 1: Sıra No + Liste
                         TextInput::make('queue_number')
                             ->label('Sıra No')
                             ->disabled()
                             ->dehydrated(false)
                             ->visible(fn (?KurbanEntry $record) => $record !== null),
 
-                        Select::make('kurban_list_id')
-                            ->label('Liste')
-                            ->options(fn () => KurbanList::query()
+                        ...self::getSharedEntryFormFields(
+                            listOptions: fn () => KurbanList::query()
                                 ->with(['season', 'collector'])
                                 ->get()
                                 ->mapWithKeys(fn (KurbanList $l) => [$l->id => $l->getTitle()])
-                                ->toArray()
-                            )
-                            ->searchable()
-                            ->preload()
-                            ->required()
-                            ->live()
-                            ->prefixIcon('heroicon-o-list-bullet')
-                            ->afterStateUpdated(function (?int $state, Set $set): void {
-                                if ($state === null) {
-                                    return;
-                                }
-
-                                $list = KurbanList::with('season')->find($state);
-
-                                if ($list?->season?->default_livestock_type !== null) {
-                                    $set('livestock_type', $list->season->default_livestock_type->value);
-                                }
-                            }),
-
-                        // Satır 2: Hayvan Türü + Kurban Türü
-                        Select::make('livestock_type')
-                            ->label('Hayvan Türü (Hisse)')
-                            ->required()
-                            ->options(collect(LivestockType::cases())->mapWithKeys(fn (LivestockType $t) => [$t->value => $t->label()])->toArray())
-                            ->default(LivestockType::LARGE->value)
-                            ->prefixIcon('heroicon-o-tag'),
-
-                        Select::make('sacrifice_category_id')
-                            ->label('Kurban Türü')
-                            ->required()
-                            ->options(fn () => SafeTransactionCategory::query()
-                                ->where('is_sacrifice_type', true)
-                                ->where('is_active', true)
-                                ->orderBy('sort_order')
-                                ->get()
-                                ->mapWithKeys(fn ($c) => [$c->id => $c->name])
-                                ->toArray()
-                            )
-                            ->searchable()
-                            ->prefixIcon('heroicon-o-tag'),
-
-                        // Satır 3: Açıklama
-                        Textarea::make('notes')
-                            ->label('Açıklama')
-                            ->nullable()
-                            ->rows(3)
-                            ->placeholder('Varsa özel notlar...')
-                            ->columnSpanFull(),
+                                ->toArray(),
+                            livestockTypeDefault: LivestockType::LARGE->value,
+                        ),
                     ]),
             ]);
     }
@@ -207,6 +221,12 @@ class KurbanEntryResource extends Resource
                     ->label('Ödeme Tarihi')
                     ->date('d.m.Y')
                     ->placeholder('-')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                TextColumn::make('notes')
+                    ->label('Açıklama')
+                    ->placeholder('-')
+                    ->limit(60)
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('created_at')
