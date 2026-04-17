@@ -250,7 +250,6 @@ class EditIncomeSafeTransaction extends EditRecord
                             ->schema([
                                 Forms\Components\Select::make('contact_id')
                                     ->label(fn (): string => $this->activeContactType?->label() ?? 'İlgili Kişi')
-                                    ->required(fn (): bool => $this->activeContactType !== null)
                                     ->options(function (): array {
                                         if ($this->activeContactType === null) {
                                             return [];
