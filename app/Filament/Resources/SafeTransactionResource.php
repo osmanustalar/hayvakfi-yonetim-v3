@@ -295,20 +295,33 @@ class SafeTransactionResource extends Resource
             ])
             ->filtersFormColumns(2)
             ->actions([
-                Action::make('assign')
-                    ->label('Ata')
-                    ->icon('heroicon-o-link')
+                Action::make('wizard_assign')
+                    ->label('İşlemi Tamamla')
+                    ->icon('heroicon-o-clipboard-document-check')
                     ->color('warning')
                     ->visible(function (SafeTransaction $record): bool {
-                        // Sadece kategori ID=3 ve target_transaction_id=null
+                        if ($record->target_transaction_id !== null) {
+                            return false;
+                        }
+
                         return $record->items()->where('transaction_category_id', 3)->exists()
-                            && $record->target_transaction_id === null;
+                            || $record->operation_type !== null;
                     })
-                    ->url(fn (SafeTransaction $record): string => static::getUrl('assign', ['record' => $record->id])),
+                    ->url(fn (SafeTransaction $record): string => static::getUrl('wizard-assign', ['record' => $record->id])),
 
                 Action::make('edit')
                     ->label('Düzenle')
                     ->icon('heroicon-o-pencil')
+                    ->visible(function (SafeTransaction $record): bool {
+                        if ($record->target_transaction_id === null) {
+                            return ! (
+                                $record->items()->where('transaction_category_id', 3)->exists()
+                                || $record->operation_type !== null
+                            );
+                        }
+
+                        return true;
+                    })
                     ->url(function (SafeTransaction $record): ?string {
                         $type = $record->type instanceof TransactionType
                             ? $record->type->value
@@ -369,6 +382,7 @@ class SafeTransactionResource extends Resource
             'edit-exchange' => Pages\EditExchangeSafeTransaction::route('/{record}/edit/exchange'),
             'edit-transfer' => Pages\EditTransferSafeTransaction::route('/{record}/edit/transfer'),
             'assign' => Pages\AssignSafeTransaction::route('/{record}/assign'),
+            'wizard-assign' => Pages\WizardAssignSafeTransaction::route('/{record}/wizard-assign'),
         ];
     }
 }
