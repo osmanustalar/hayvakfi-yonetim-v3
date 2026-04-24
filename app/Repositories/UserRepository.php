@@ -37,6 +37,11 @@ class UserRepository extends BaseRepository
             $phone = '0'.substr($phone, 2);
         }
 
+        // 10 haneli ve 5 ile başlıyorsa (tarayıcı 0'ı düşürdüyse) başına 0 ekle
+        if (strlen($phone) === 10 && str_starts_with($phone, '5')) {
+            $phone = '0'.$phone;
+        }
+
         return $phone;
     }
 }
