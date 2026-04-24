@@ -4,3 +4,4 @@
 - [FAZ 2 completed](project_faz2_complete.md) — Contacts (global pool, no CompanyScope) fully implemented
 - [FAZ 3 completed](project_faz3_complete.md) — Kasa & Finans: SafeGroup/Safe/SafeTransaction/Items, 15 seeded categories, 4 Filament resources
 - [SafeTransaction type-based pages](project_safe_transaction_pages.md) — 4 Create + 4 Edit pages, Service update methods, SafeResource quick-action buttons
+- [FAZ 4 & FAZ 5 completed](project_faz4_faz5_complete.md) — Education (SchoolClass/StudentEnrollment/StudentFee) & Aid tracking fully implemented
