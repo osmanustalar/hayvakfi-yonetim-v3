@@ -12,7 +12,6 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
-use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -121,11 +120,11 @@ class UserResource extends Resource
                 Section::make('Roller')
                     ->icon('heroicon-o-shield-check')
                     ->schema([
-                        CheckboxList::make('roles')
+                        Select::make('roles')
                             ->label('Roller')
                             ->options(fn (): array => Role::query()->pluck('name', 'name')->toArray())
-                            ->bulkToggleable()
-                            ->columns(2)
+                            ->multiple()
+                            ->preload()
                             ->helperText('Kullanıcıya atanacak rolleri seçin'),
                     ]),
             ]);
