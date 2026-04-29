@@ -123,7 +123,7 @@ class UserResource extends Resource
                     ->schema([
                         CheckboxList::make('roles')
                             ->label('Roller')
-                            ->options(Role::all()->pluck('name', 'name')->toArray())
+                            ->options(fn (): array => Role::query()->pluck('name', 'name')->toArray())
                             ->bulkToggleable()
                             ->columns(2)
                             ->helperText('Kullanıcıya atanacak rolleri seçin'),
