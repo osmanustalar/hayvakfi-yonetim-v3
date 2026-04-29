@@ -12,6 +12,7 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -24,6 +25,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Permission\Models\Role;
 
 class UserResource extends Resource
 {
@@ -114,6 +116,18 @@ class UserResource extends Resource
                                     ->label('Aktif')
                                     ->default(true),
                             ]),
+                    ]),
+
+                Section::make('Roller')
+                    ->icon('heroicon-o-shield-check')
+                    ->schema([
+                        CheckboxList::make('roles')
+                            ->label('Roller')
+                            ->options(fn (): array => Role::all()->pluck('name', 'name')->toArray())
+                            ->searchable()
+                            ->bulkToggleable()
+                            ->columns(2)
+                            ->helperText('Kullanıcıya atanacak rolleri seçin'),
                     ]),
             ]);
     }
