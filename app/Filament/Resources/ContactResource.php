@@ -15,8 +15,8 @@ use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -96,7 +96,23 @@ class ContactResource extends Resource
                                     ->tel()
                                     ->placeholder('+90 555 123 45 67')
                                     ->maxLength(30)
-                                    ->nullable(),
+                                    ->nullable()
+                                    ->live(onBlur: true)
+                                    ->afterStateUpdated(function (?string $state, callable $set, $record): void {
+                                        if (blank($state)) {
+                                            $set('_phone_duplicate_hint', null);
+                                            return;
+                                        }
+                                        $existing = \App\Models\Contact::query()
+                                            ->where('phone', $state)
+                                            ->when($record, fn ($q) => $q->where('id', '!=', $record->id))
+                                            ->first();
+                                        $set('_phone_duplicate_hint', $existing
+                                            ? "⚠️ Bu telefon zaten {$existing->first_name} {$existing->last_name} kişisine kayıtlı."
+                                            : null);
+                                    })
+                                    ->hintColor('warning')
+                                    ->hint(fn ($get): ?string => $get('_phone_duplicate_hint')),
 
                                 DatePicker::make('birth_date')
                                     ->label('Doğum Tarihi')
@@ -116,6 +132,8 @@ class ContactResource extends Resource
                                     ->searchable()
                                     ->prefixIcon('heroicon-o-map-pin'),
                             ]),
+
+                        Hidden::make('_phone_duplicate_hint'),
 
                         Textarea::make('address')
                             ->label('Adres')
@@ -137,7 +155,7 @@ class ContactResource extends Resource
                                     ->schema([
                                         TextInput::make('phone')
                                             ->label('Telefon')
-                                            ->required()
+                                            ->nullable()
                                             ->maxLength(30)
                                             ->placeholder('+49 170 123 45 67'),
 
@@ -150,6 +168,12 @@ class ContactResource extends Resource
                             ])
                             ->addActionLabel('Telefon Ekle')
                             ->reorderable(false)
+                            ->mutateRelationshipDataBeforeCreateUsing(function (array $data): ?array {
+                                return blank($data['phone']) ? null : $data;
+                            })
+                            ->mutateRelationshipDataBeforeSaveUsing(function (array $data): ?array {
+                                return blank($data['phone']) ? null : $data;
+                            })
                             ->columnSpanFull(),
                     ]),
 
@@ -217,6 +241,7 @@ class ContactResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->recordUrl(fn (Contact $record): string => static::getUrl('edit', ['record' => $record]))
             ->paginationPageOptions([20, 50, 100])
             ->defaultPaginationPageOption(20)
             ->filters([
@@ -241,6 +266,19 @@ class ContactResource extends Resource
                     ->queries(
                         true: fn (Builder $query): Builder => $query->whereNotNull('phone'),
                         false: fn (Builder $query): Builder => $query->whereNull('phone'),
+                    ),
+
+                Filter::make('duplicate_phone')
+                    ->label('Mükerrer Telefon')
+                    ->query(fn (Builder $query): Builder => $query->whereNotNull('phone')
+                        ->whereIn('phone', function ($sub): void {
+                            $sub->select('phone')
+                                ->from('contacts')
+                                ->whereNull('deleted_at')
+                                ->whereNotNull('phone')
+                                ->groupBy('phone')
+                                ->havingRaw('COUNT(*) > 1');
+                        })
                     ),
             ])
             ->actions([
@@ -285,7 +323,6 @@ class ContactResource extends Resource
                     ->modalHeading(fn (Contact $record): string => $record->first_name.' '.$record->last_name.' — Kurban Listesine Ekle')
                     ->modalSubmitActionLabel('Listeye Ekle')
                     ->modalCancelActionLabel('İptal'),
-                ViewAction::make()->label('Görüntüle'),
                 EditAction::make()->label('Düzenle'),
             ])
             ->bulkActions([
@@ -301,7 +338,6 @@ class ContactResource extends Resource
         return [
             'index' => Pages\ListContacts::route('/'),
             'create' => Pages\CreateContact::route('/create'),
-            'view' => Pages\ViewContact::route('/{record}'),
             'edit' => Pages\EditContact::route('/{record}/edit'),
         ];
     }
