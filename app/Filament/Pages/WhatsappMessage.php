@@ -155,13 +155,21 @@ class WhatsappMessage extends Page
         $this->categories     = $data['categories'] ?? [];
         $this->contact_ids    = $data['contact_ids'] ?? [];
         $this->message        = $data['message'] ?? '';
+
+        $imagePaths = $data['image_urls'] ?? [];
         $this->image_urls = array_values(array_map(
-            fn (string $path): string => \Illuminate\Support\Facades\Storage::disk('public')->url($path),
-            $data['image_urls'] ?? []
+            function (string $path): string {
+                if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+                    return $path;
+                }
+                return \Illuminate\Support\Facades\Storage::disk('public')->url($path);
+            },
+            $imagePaths
         ));
 
         if (blank($this->message)) {
             Notification::make()->warning()->title('Mesaj boş olamaz.')->send();
+            $this->restoreForm($imagePaths);
             return;
         }
 
@@ -172,6 +180,7 @@ class WhatsappMessage extends Page
 
         if ($contacts->isEmpty()) {
             Notification::make()->warning()->title('Gönderilecek kişi bulunamadı.')->send();
+            $this->restoreForm($imagePaths);
             return;
         }
 
@@ -204,6 +213,19 @@ class WhatsappMessage extends Page
             ->title('Mesaj gönderimi tamamlandı')
             ->body($body)
             ->send();
+
+        $this->restoreForm($imagePaths);
+    }
+
+    private function restoreForm(array $imagePaths): void
+    {
+        $this->form->fill([
+            'recipient_type' => $this->recipient_type,
+            'categories'     => $this->categories,
+            'contact_ids'    => $this->contact_ids,
+            'message'        => $this->message,
+            'image_urls'     => $imagePaths,
+        ]);
     }
 
     protected function buildQuery(): \Illuminate\Database\Eloquent\Builder
