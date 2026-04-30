@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\SafeTransactionResource\Pages;
 
-use App\Enums\ContactType;
 use App\Enums\TransactionType;
 use App\Filament\Resources\SafeTransactionResource;
 use App\Helpers\Helper;
 use App\Models\Contact;
+use App\Models\ContactCategory;
 use App\Models\Safe;
 use App\Models\SafeTransaction;
 use App\Models\SafeTransactionCategory;
@@ -29,7 +29,8 @@ class EditExpenseSafeTransaction extends EditRecord
 {
     protected static string $resource = SafeTransactionResource::class;
 
-    public ?ContactType $activeContactType = null;
+    public ?int $activeContactCategoryId = null;
+    public string $activeContactCategoryLabel = 'İlgili Kişi';
 
     protected function authorizeAccess(): void
     {
@@ -50,8 +51,9 @@ class EditExpenseSafeTransaction extends EditRecord
         parent::mount($record);
 
         foreach ($this->record->items as $item) {
-            if ($item->transactionCategory?->contact_type !== null) {
-                $this->activeContactType = $item->transactionCategory->contact_type;
+            if ($item->transactionCategory?->contact_category_id !== null) {
+                $this->activeContactCategoryId    = $item->transactionCategory->contact_category_id;
+                $this->activeContactCategoryLabel = $item->transactionCategory->contactCategory?->name ?? 'İlgili Kişi';
                 break;
             }
         }
@@ -162,7 +164,8 @@ class EditExpenseSafeTransaction extends EditRecord
                                             ->live(onBlur: true)
                                             ->afterStateUpdated(function (?int $state, Set $set): void {
                                                 if ($state === null) {
-                                                    $this->activeContactType = null;
+                                                    $this->activeContactCategoryId    = null;
+                                                    $this->activeContactCategoryLabel = 'İlgili Kişi';
 
                                                     return;
                                                 }
@@ -184,7 +187,8 @@ class EditExpenseSafeTransaction extends EditRecord
                                                     return;
                                                 }
 
-                                                $this->activeContactType = $category->contact_type;
+                                                $this->activeContactCategoryId    = $category->contact_category_id;
+                                                $this->activeContactCategoryLabel = $category->contactCategory?->name ?? 'İlgili Kişi';
                                             })
                                             ->searchable()
                                             ->prefixIcon('heroicon-o-tag'),
@@ -235,19 +239,19 @@ class EditExpenseSafeTransaction extends EditRecord
                         Schemas\Components\Section::make('İlgili Kişi')
                             ->schema([
                                 Forms\Components\Select::make('contact_id')
-                                    ->label(fn (): string => $this->activeContactType?->label() ?? 'İlgili Kişi')
+                                    ->label(fn (): string => $this->activeContactCategoryLabel)
                                     ->options(function (): array {
-                                        if ($this->activeContactType === null) {
+                                        if ($this->activeContactCategoryId === null) {
                                             return [];
                                         }
 
-                                        return $this->buildContactOptions($this->activeContactType);
+                                        return $this->buildContactOptions($this->activeContactCategoryId);
                                     })
                                     ->searchable()
                                     ->prefixIcon('heroicon-o-user-group')
                                     ->columnSpanFull(),
                             ])
-                            ->visible(fn (): bool => $this->activeContactType !== null),
+                            ->visible(fn (): bool => $this->activeContactCategoryId !== null),
                     ]),
             ])
             ->columns(1);
@@ -380,17 +384,15 @@ class EditExpenseSafeTransaction extends EditRecord
     /**
      * @return array<int, string>
      */
-    private function buildContactOptions(ContactType $contactType): array
+    private function buildContactOptions(?int $contactCategoryId): array
     {
-        $column = match ($contactType) {
-            ContactType::DONOR => 'is_donor',
-            ContactType::AID_RECIPIENT => 'is_aid_recipient',
-            ContactType::STUDENT => 'is_student',
-        };
+        $query = Contact::query()->orderBy('first_name');
 
-        return Contact::query()
-            ->where($column, true)
-            ->orderBy('first_name')
+        if ($contactCategoryId !== null) {
+            $query->whereHas('categories', fn ($q) => $q->where('contact_categories.id', $contactCategoryId));
+        }
+
+        return $query
             ->get()
             ->mapWithKeys(fn (Contact $c): array => [
                 $c->id => $c->first_name.' '.$c->last_name.($c->phone ? ' ('.$c->phone.')' : ''),

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\SafeTransactionResource\Pages;
 
-use App\Enums\ContactType;
 use App\Enums\TransactionType;
 use App\Filament\Resources\SafeTransactionResource;
 use App\Helpers\Helper;
@@ -31,7 +30,8 @@ class EditIncomeSafeTransaction extends EditRecord
 
     protected static string $resource = SafeTransactionResource::class;
 
-    public ?ContactType $activeContactType = null;
+    public ?int $activeContactCategoryId = null;
+    public string $activeContactCategoryLabel = 'İlgili Kişi';
 
     public bool $activeIsKurban = false;
 
@@ -53,11 +53,12 @@ class EditIncomeSafeTransaction extends EditRecord
     {
         parent::mount($record);
 
-        // Mevcut kategoriden contact_type ve is_sacrifice_type al
+        // Mevcut kategoriden contact_category_id ve is_sacrifice_type al
         foreach ($this->record->items as $item) {
-            if ($item->transactionCategory?->contact_type !== null) {
-                $this->activeContactType = $item->transactionCategory->contact_type;
-                $this->activeIsKurban = (bool) ($item->transactionCategory->is_sacrifice_type ?? false);
+            if ($item->transactionCategory?->contact_category_id !== null) {
+                $this->activeContactCategoryId    = $item->transactionCategory->contact_category_id;
+                $this->activeContactCategoryLabel = $item->transactionCategory->contactCategory?->name ?? 'İlgili Kişi';
+                $this->activeIsKurban             = (bool) ($item->transactionCategory->is_sacrifice_type ?? false);
                 break;
             }
         }
@@ -249,19 +250,19 @@ class EditIncomeSafeTransaction extends EditRecord
                         Schemas\Components\Section::make('İlgili Kişi')
                             ->schema([
                                 Forms\Components\Select::make('contact_id')
-                                    ->label(fn (): string => $this->activeContactType?->label() ?? 'İlgili Kişi')
+                                    ->label(fn (): string => $this->activeContactCategoryLabel)
                                     ->options(function (): array {
-                                        if ($this->activeContactType === null) {
+                                        if ($this->activeContactCategoryId === null) {
                                             return [];
                                         }
 
-                                        return $this->buildContactOptions($this->activeContactType, $this->activeIsKurban);
+                                        return $this->buildContactOptions($this->activeContactCategoryId, $this->activeIsKurban);
                                     })
                                     ->searchable()
                                     ->prefixIcon('heroicon-o-user-group')
                                     ->columnSpanFull(),
                             ])
-                            ->visible(fn (): bool => $this->activeContactType !== null),
+                            ->visible(fn (): bool => $this->activeContactCategoryId !== null),
                     ]),
             ])
             ->columns(1);

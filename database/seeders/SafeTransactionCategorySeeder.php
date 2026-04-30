@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Enums\ContactType;
+use App\Models\ContactCategory;
 use App\Models\SafeTransactionCategory;
 use Illuminate\Database\Seeder;
 
@@ -11,6 +13,8 @@ class SafeTransactionCategorySeeder extends Seeder
 {
     public function run(): void
     {
+        $donorCategoryId = ContactCategory::findByType(ContactType::DONOR)?->id;
+
         // Sabit ID'ler — sıra kesinlikle bozulmaz.
         // ID 1 — Hesaplar Arası Para Transferleri
         SafeTransactionCategory::updateOrCreate(
@@ -24,7 +28,7 @@ class SafeTransactionCategorySeeder extends Seeder
                 'is_active' => true,
                 'is_disable_in_report' => true,
                 'is_sacrifice_type' => false,
-                'contact_type' => null,
+                'contact_category_id' => null,
                 'color' => null,
                 'description' => null,
                 'created_user_id' => null,
@@ -43,7 +47,7 @@ class SafeTransactionCategorySeeder extends Seeder
                 'is_active' => true,
                 'is_disable_in_report' => true,
                 'is_sacrifice_type' => false,
-                'contact_type' => null,
+                'contact_category_id' => null,
                 'color' => null,
                 'description' => null,
                 'created_user_id' => null,
@@ -62,7 +66,7 @@ class SafeTransactionCategorySeeder extends Seeder
                 'is_active' => true,
                 'is_disable_in_report' => false,
                 'is_sacrifice_type' => false,
-                'contact_type' => null,
+                'contact_category_id' => null,
                 'color' => null,
                 'description' => null,
                 'created_user_id' => null,
@@ -81,7 +85,7 @@ class SafeTransactionCategorySeeder extends Seeder
                 'is_active' => false,
                 'is_disable_in_report' => false,
                 'is_sacrifice_type' => false,
-                'contact_type' => null,
+                'contact_category_id' => null,
                 'color' => null,
                 'description' => null,
                 'created_user_id' => null,
@@ -100,7 +104,7 @@ class SafeTransactionCategorySeeder extends Seeder
                 'is_active' => true,
                 'is_disable_in_report' => false,
                 'is_sacrifice_type' => false,
-                'contact_type' => null,
+                'contact_category_id' => null,
                 'color' => null,
                 'description' => null,
                 'created_user_id' => null,
@@ -131,7 +135,7 @@ class SafeTransactionCategorySeeder extends Seeder
                     'is_active' => true,
                     'is_disable_in_report' => false,
                     'is_sacrifice_type' => false,
-                    'contact_type' => 'donor',
+                    'contact_category_id' => $donorCategoryId,
                     'color' => null,
                     'description' => null,
                     'created_user_id' => null,
@@ -151,7 +155,7 @@ class SafeTransactionCategorySeeder extends Seeder
                 'is_active' => true,
                 'is_disable_in_report' => false,
                 'is_sacrifice_type' => false,
-                'contact_type' => null,
+                'contact_category_id' => null,
                 'color' => null,
                 'description' => null,
                 'created_user_id' => null,
@@ -182,7 +186,7 @@ class SafeTransactionCategorySeeder extends Seeder
                     'is_active' => true,
                     'is_disable_in_report' => false,
                     'is_sacrifice_type' => $data['is_sacrifice_type'],
-                    'contact_type' => 'donor',
+                    'contact_category_id' => $donorCategoryId,
                     'color' => null,
                     'description' => null,
                     'created_user_id' => null,
@@ -228,7 +232,7 @@ class SafeTransactionCategorySeeder extends Seeder
                     'is_active' => true,
                     'is_disable_in_report' => false,
                     'is_sacrifice_type' => false,
-                    'contact_type' => null,
+                    'contact_category_id' => null,
                     'color' => null,
                     'description' => null,
                     'created_user_id' => null,

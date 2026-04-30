@@ -8,6 +8,7 @@ use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -23,9 +24,7 @@ class Contact extends Model
         'birth_date',
         'address',
         'region_id',
-        'is_donor',
-        'is_aid_recipient',
-        'is_student',
+        'whatsapp_enabled',
         'notes',
         'created_user_id',
     ];
@@ -33,9 +32,7 @@ class Contact extends Model
     protected function casts(): array
     {
         return [
-            'is_donor' => 'boolean',
-            'is_aid_recipient' => 'boolean',
-            'is_student' => 'boolean',
+            'whatsapp_enabled' => 'boolean',
             'birth_date' => 'date',
         ];
     }
@@ -53,5 +50,11 @@ class Contact extends Model
     public function region(): BelongsTo
     {
         return $this->belongsTo(Region::class);
+    }
+
+    public function categories(): BelongsToMany
+    {
+        return $this->belongsToMany(ContactCategory::class, 'contact_contact_category')
+            ->withTimestamps();
     }
 }

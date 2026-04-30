@@ -93,14 +93,17 @@ class SafeTransactionCategoryResource extends Resource
                                             ->pluck('name', 'id')
                                     ),
 
-                                Select::make('contact_type')
-                                    ->label('Kişi Tipi')
+                                Select::make('contact_category_id')
+                                    ->label('Kişi Kategorisi')
                                     ->nullable()
-                                    ->options([
-                                        'donor' => 'Bağışçı',
-                                        'aid_recipient' => 'Yardım Alan',
-                                        'student' => 'Öğrenci',
-                                    ]),
+                                    ->options(fn () => \App\Models\ContactCategory::query()
+                                        ->where('is_active', true)
+                                        ->orderBy('name')
+                                        ->pluck('name', 'id')
+                                        ->toArray()
+                                    )
+                                    ->searchable()
+                                    ->helperText('Seçilen kategori, işlem sırasında kişi seçimi için kullanılır.'),
 
                                 TextInput::make('color')
                                     ->label('Renk (hex)')

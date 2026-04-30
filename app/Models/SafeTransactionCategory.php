@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Enums\ContactType;
 use App\Enums\TransactionType;
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Builder;
@@ -27,7 +26,7 @@ class SafeTransactionCategory extends Model
         'is_active',
         'is_disable_in_report',
         'is_sacrifice_type',
-        'contact_type',
+        'contact_category_id',
         'color',
         'description',
         'created_user_id',
@@ -36,12 +35,11 @@ class SafeTransactionCategory extends Model
     protected function casts(): array
     {
         return [
-            'type' => TransactionType::class,
-            'contact_type' => ContactType::class,
-            'is_active' => 'boolean',
-            'is_disable_in_report' => 'boolean',
-            'is_sacrifice_type' => 'boolean',
-            'sort_order' => 'integer',
+            'type'                  => TransactionType::class,
+            'is_active'             => 'boolean',
+            'is_disable_in_report'  => 'boolean',
+            'is_sacrifice_type'     => 'boolean',
+            'sort_order'            => 'integer',
         ];
     }
 
@@ -65,6 +63,11 @@ class SafeTransactionCategory extends Model
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_user_id');
+    }
+
+    public function contactCategory(): BelongsTo
+    {
+        return $this->belongsTo(ContactCategory::class, 'contact_category_id');
     }
 
     public function scopeForActiveCompany(Builder $query): Builder

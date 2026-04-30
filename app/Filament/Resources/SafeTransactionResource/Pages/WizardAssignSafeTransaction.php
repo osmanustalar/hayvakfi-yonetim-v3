@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\SafeTransactionResource\Pages;
 
-use App\Enums\ContactType;
 use App\Enums\OperationType;
 use App\Enums\TransactionType;
 use App\Filament\Resources\SafeTransactionResource;
@@ -37,7 +36,8 @@ class WizardAssignSafeTransaction extends EditRecord
 
     protected static string $resource = SafeTransactionResource::class;
 
-    public ?ContactType $activeContactType = null;
+    public ?int $activeContactCategoryId = null;
+    public string $activeContactCategoryLabel = 'İlgili Kişi';
 
     public bool $activeIsKurban = false;
 
@@ -132,8 +132,9 @@ class WizardAssignSafeTransaction extends EditRecord
                                             $set('exchange_rate', null);
                                             $set('target_amount', null);
 
-                                            $this->activeContactType = null;
-                                            $this->activeIsKurban = false;
+                                            $this->activeContactCategoryId    = null;
+                                            $this->activeContactCategoryLabel = 'İlgili Kişi';
+                                            $this->activeIsKurban             = false;
                                         }),
                                 ]),
                         ]),
@@ -223,11 +224,11 @@ class WizardAssignSafeTransaction extends EditRecord
                             Section::make('İlgili Kişi')
                                 ->description('İşlemle ilişkili kişi bilgisi')
                                 ->icon('heroicon-o-user-circle')
-                                ->visible(fn (): bool => $this->activeContactType !== null)
+                                ->visible(fn (): bool => $this->activeContactCategoryId !== null)
                                 ->schema([
                                     Select::make('contact_id')
-                                        ->label(fn (): string => $this->activeContactType?->label() ?? 'İlgili Kişi')
-                                        ->options(fn (): array => $this->buildContactOptions($this->activeContactType, $this->activeIsKurban))
+                                        ->label(fn (): string => $this->activeContactCategoryLabel)
+                                        ->options(fn (): array => $this->buildContactOptions($this->activeContactCategoryId, $this->activeIsKurban))
                                         ->searchable()
                                         ->prefixIcon('heroicon-o-user-group')
                                         ->columnSpanFull(),

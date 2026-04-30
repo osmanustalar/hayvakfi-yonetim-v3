@@ -211,10 +211,6 @@ return [
         'national_id' => 'TC Kimlik No',
         'birth_date' => 'Doğum Tarihi',
         'notes' => 'Notlar',
-        'is_donor' => 'Bağışçı',
-        'is_aid_recipient' => 'Yardım Alan',
-        'is_student' => 'Öğrenci',
-
         // Para Birimi
         'symbol' => 'Sembol',
         'currency_id' => 'Para Birimi',

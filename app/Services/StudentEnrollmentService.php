@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\ContactType;
 use App\Models\Contact;
+use App\Models\ContactCategory;
 use App\Models\SchoolClass;
 use App\Models\StudentEnrollment;
 use App\Repositories\StudentEnrollmentRepository;
@@ -57,9 +59,13 @@ class StudentEnrollmentService
 
             $enrollment = $this->repository->create($data);
 
-            Contact::where('id', $data['contact_id'])
-                ->where('is_student', false)
-                ->update(['is_student' => true]);
+            // Yan etki: kişiyi Öğrenci kategorisine ekle
+            $studentCategory = ContactCategory::findByType(ContactType::STUDENT);
+            if ($studentCategory !== null) {
+                Contact::findOrFail((int) $data['contact_id'])
+                    ->categories()
+                    ->syncWithoutDetaching([$studentCategory->id]);
+            }
 
             return $enrollment;
         });

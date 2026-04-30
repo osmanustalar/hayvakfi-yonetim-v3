@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services\V1Migration;
 
+use App\Enums\ContactType;
 use App\Models\Contact;
+use App\Models\ContactCategory;
 
 class ContactMigrator extends BaseMigrator
 {
@@ -53,24 +55,27 @@ class ContactMigrator extends BaseMigrator
                 $notes .= "\n\nDiğer telefonlar: {$phoneList}";
             }
 
-            Contact::updateOrCreate(
+            $contact = Contact::updateOrCreate(
                 ['id' => $v1Donor->id],
                 [
-                    'first_name' => $firstName,
-                    'last_name' => $lastName,
-                    'phone' => $phone,
-                    'address' => $v1Donor->address,
-                    'city' => $v1Donor->location,
-                    'notes' => trim($notes) ?: null,
-                    'is_donor' => true,
-                    'is_aid_recipient' => false,
-                    'is_student' => false,
+                    'first_name'      => $firstName,
+                    'last_name'       => $lastName,
+                    'phone'           => $phone,
+                    'address'         => $v1Donor->address,
+                    'city'            => $v1Donor->location,
+                    'notes'           => trim($notes) ?: null,
                     'created_user_id' => $v1Donor->created_user_id,
-                    'created_at' => $v1Donor->created_at,
-                    'updated_at' => $v1Donor->updated_at,
-                    'deleted_at' => $v1Donor->deleted_at,
+                    'created_at'      => $v1Donor->created_at,
+                    'updated_at'      => $v1Donor->updated_at,
+                    'deleted_at'      => $v1Donor->deleted_at,
                 ]
             );
+
+            // V1'de tüm kayıtlar bağışçı — Bağışçı kategorisine ekle
+            $donorCategory = ContactCategory::findByType(ContactType::DONOR);
+            if ($donorCategory !== null) {
+                $contact->categories()->syncWithoutDetaching([$donorCategory->id]);
+            }
         }
     }
 }

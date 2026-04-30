@@ -26,13 +26,13 @@ class CreateContact extends BaseCreateRecord
 
     protected function beforeCreate(): void
     {
-        $data = $this->form->getState();
+        $categories = $this->form->getRawState()['categories'] ?? [];
 
-        if (empty($data['is_donor']) && empty($data['is_aid_recipient']) && empty($data['is_student'])) {
+        if (empty($categories)) {
             Notification::make()
                 ->danger()
                 ->title('Kategori seçilmedi')
-                ->body('En az bir kategori seçilmelidir: Bağışçı, Yardım Alan veya Öğrenci.')
+                ->body('En az bir kategori seçilmelidir.')
                 ->send();
 
             $this->halt();

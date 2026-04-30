@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\ContactType;
 use App\Enums\LivestockType;
 use App\Enums\TransactionType;
+use App\Models\ContactCategory;
 use App\Models\KurbanEntry;
 use App\Repositories\KurbanEntryRepository;
 use Illuminate\Database\Eloquent\Collection;
@@ -132,13 +134,13 @@ class KurbanEntryService
                             'first_name' => $entry->first_name,
                             'last_name' => $entry->last_name,
                             'phone' => $entry->phone,
-                            'is_donor' => true,
                         ]);
-                    } else {
-                        // Mevcut kişiyi bağışçı olarak işaretle
-                        if (! $contact->is_donor) {
-                            $contact->update(['is_donor' => true]);
-                        }
+                    }
+
+                    // Kişiyi Bağışçı kategorisine ekle
+                    $donorCategory = ContactCategory::findByType(ContactType::DONOR);
+                    if ($donorCategory !== null) {
+                        $contact->categories()->syncWithoutDetaching([$donorCategory->id]);
                     }
                     $entry->update(['contact_id' => $contact->id]);
                     $transaction->update(['contact_id' => $contact->id]);

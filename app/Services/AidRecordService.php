@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\ContactType;
 use App\Models\AidRecord;
 use App\Models\Contact;
+use App\Models\ContactCategory;
 use App\Repositories\AidRecordRepository;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -39,10 +41,13 @@ class AidRecordService
 
             $aidRecord = $this->repository->create($data);
 
-            // Yan etki: contact.is_aid_recipient = true
-            Contact::where('id', $data['contact_id'])
-                ->where('is_aid_recipient', false)
-                ->update(['is_aid_recipient' => true]);
+            // Yan etki: kişiyi Yardım Alan kategorisine ekle
+            $aidCategory = ContactCategory::findByType(ContactType::AID_RECIPIENT);
+            if ($aidCategory !== null) {
+                Contact::findOrFail((int) $data['contact_id'])
+                    ->categories()
+                    ->syncWithoutDetaching([$aidCategory->id]);
+            }
 
             return $aidRecord;
         });

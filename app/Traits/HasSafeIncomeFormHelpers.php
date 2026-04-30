@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Traits;
 
-use App\Enums\ContactType;
 use App\Models\Contact;
+use App\Models\ContactCategory;
 use App\Models\SafeTransactionCategory;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Utilities\Set;
@@ -53,18 +53,12 @@ trait HasSafeIncomeFormHelpers
     /**
      * @return array<int, string>
      */
-    private function buildContactOptions(ContactType $contactType, bool $skipTypeFilter = false): array
+    private function buildContactOptions(?int $contactCategoryId, bool $skipTypeFilter = false): array
     {
         $query = Contact::query()->orderBy('first_name');
 
-        if (! $skipTypeFilter) {
-            $column = match ($contactType) {
-                ContactType::DONOR => 'is_donor',
-                ContactType::AID_RECIPIENT => 'is_aid_recipient',
-                ContactType::STUDENT => 'is_student',
-            };
-
-            $query->where($column, true);
+        if (! $skipTypeFilter && $contactCategoryId !== null) {
+            $query->whereHas('categories', fn ($q) => $q->where('contact_categories.id', $contactCategoryId));
         }
 
         return $query
@@ -81,8 +75,9 @@ trait HasSafeIncomeFormHelpers
     protected function handleCategoryStateUpdated(?int $state, Set $set): void
     {
         if ($state === null) {
-            $this->activeContactType = null;
-            $this->activeIsKurban = false;
+            $this->activeContactCategoryId    = null;
+            $this->activeContactCategoryLabel = 'İlgili Kişi';
+            $this->activeIsKurban             = false;
 
             return;
         }
@@ -104,7 +99,8 @@ trait HasSafeIncomeFormHelpers
             return;
         }
 
-        $this->activeContactType = $category->contact_type;
-        $this->activeIsKurban = (bool) ($category->is_sacrifice_type ?? false);
+        $this->activeContactCategoryId    = $category->contact_category_id;
+        $this->activeContactCategoryLabel = $category->contactCategory?->name ?? 'İlgili Kişi';
+        $this->activeIsKurban             = (bool) ($category->is_sacrifice_type ?? false);
     }
 }

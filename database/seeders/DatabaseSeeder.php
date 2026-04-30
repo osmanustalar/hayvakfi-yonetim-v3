@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             SafeTransactionCategorySeeder::class,
             SafeSeeder::class,
             SafeGroupSeeder::class,
+            ContactCategorySeeder::class,
         ]);
     }
 }

@@ -30,6 +30,7 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -119,6 +120,10 @@ class ContactResource extends Resource
                                     ->displayFormat('d.m.Y')
                                     ->nullable(),
 
+                                Toggle::make('whatsapp_enabled')
+                                    ->label('WhatsApp Bildirimi')
+                                    ->default(true),
+
                                 Select::make('region_id')
                                     ->label('Bölge')
                                     ->nullable()
@@ -181,20 +186,13 @@ class ContactResource extends Resource
                     ->icon('heroicon-o-tag')
                     ->description('Kişinin hangi kategorilere dahil olduğunu belirtin.')
                     ->schema([
-                        Grid::make(3)
-                            ->schema([
-                                Toggle::make('is_donor')
-                                    ->label('Bağışçı')
-                                    ->default(false),
-
-                                Toggle::make('is_aid_recipient')
-                                    ->label('Yardım Alan')
-                                    ->default(false),
-
-                                Toggle::make('is_student')
-                                    ->label('Öğrenci')
-                                    ->default(false),
-                            ]),
+                        Select::make('categories')
+                            ->label('Kategoriler')
+                            ->relationship('categories', 'name')
+                            ->multiple()
+                            ->preload()
+                            ->searchable()
+                            ->columnSpanFull(),
                     ]),
             ]);
     }
@@ -223,17 +221,16 @@ class ContactResource extends Resource
                     ->searchable()
                     ->toggleable(),
 
-                IconColumn::make('is_donor')
-                    ->label('Bağışçı')
-                    ->boolean(),
+                TextColumn::make('categories.name')
+                    ->label('Kategoriler')
+                    ->badge()
+                    ->separator(',')
+                    ->toggleable(isToggledHiddenByDefault: false),
 
-                IconColumn::make('is_aid_recipient')
-                    ->label('Yardım Alan')
-                    ->boolean(),
-
-                IconColumn::make('is_student')
-                    ->label('Öğrenci')
-                    ->boolean(),
+                IconColumn::make('whatsapp_enabled')
+                    ->label('WhatsApp')
+                    ->boolean()
+                    ->toggleable(),
 
                 TextColumn::make('created_at')
                     ->label('Oluşturulma')
@@ -245,17 +242,11 @@ class ContactResource extends Resource
             ->paginationPageOptions([20, 50, 100])
             ->defaultPaginationPageOption(20)
             ->filters([
-                Filter::make('is_donor')
-                    ->label('Bağışçılar')
-                    ->query(fn (Builder $query): Builder => $query->where('is_donor', true)),
-
-                Filter::make('is_aid_recipient')
-                    ->label('Yardım Alanlar')
-                    ->query(fn (Builder $query): Builder => $query->where('is_aid_recipient', true)),
-
-                Filter::make('is_student')
-                    ->label('Öğrenciler')
-                    ->query(fn (Builder $query): Builder => $query->where('is_student', true)),
+                SelectFilter::make('categories')
+                    ->label('Kategori')
+                    ->relationship('categories', 'name')
+                    ->multiple()
+                    ->preload(),
 
                 TernaryFilter::make('phone')
                     ->label('Telefon Durumu')
@@ -280,6 +271,10 @@ class ContactResource extends Resource
                                 ->havingRaw('COUNT(*) > 1');
                         })
                     ),
+
+                Filter::make('whatsapp_enabled')
+                    ->label('WhatsApp Aktif')
+                    ->query(fn (Builder $query): Builder => $query->where('whatsapp_enabled', true)),
             ])
             ->actions([
                 Action::make('addToKurbanList')

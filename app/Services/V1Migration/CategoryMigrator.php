@@ -73,7 +73,7 @@ class CategoryMigrator extends BaseMigrator
                     'sort_order' => ($v1Cat->id * 10),
                     'is_active' => (bool) $v1Cat->is_active,
                     'is_disable_in_report' => (bool) $v1Cat->is_disable_in_report,
-                    'contact_type' => null,
+                    'contact_category_id' => null,
                     'color' => $v1Cat->color ?? '#CCCCCC',
                     'created_user_id' => $v1Cat->created_user_id,
                     'created_at' => $v1Cat->created_at,

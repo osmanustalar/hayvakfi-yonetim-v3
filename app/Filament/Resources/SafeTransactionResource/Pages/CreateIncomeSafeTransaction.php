@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\SafeTransactionResource\Pages;
 
-use App\Enums\ContactType;
 use App\Enums\TransactionType;
 use App\Filament\Pages\BaseCreateRecord;
 use App\Filament\Resources\SafeTransactionResource;
@@ -31,7 +30,8 @@ class CreateIncomeSafeTransaction extends BaseCreateRecord
 
     public ?int $safeId = null;
 
-    public ?ContactType $activeContactType = null;
+    public ?int $activeContactCategoryId = null;
+    public string $activeContactCategoryLabel = 'İlgili Kişi';
 
     public bool $activeIsKurban = false;
 
@@ -241,19 +241,19 @@ class CreateIncomeSafeTransaction extends BaseCreateRecord
                         Schemas\Components\Section::make('İlgili Kişi')
                             ->schema([
                                 Forms\Components\Select::make('contact_id')
-                                    ->label(fn (): string => $this->activeContactType?->label() ?? 'İlgili Kişi')
+                                    ->label(fn (): string => $this->activeContactCategoryLabel)
                                     ->options(function (): array {
-                                        if ($this->activeContactType === null) {
+                                        if ($this->activeContactCategoryId === null) {
                                             return [];
                                         }
 
-                                        return $this->buildContactOptions($this->activeContactType, $this->activeIsKurban);
+                                        return $this->buildContactOptions($this->activeContactCategoryId, $this->activeIsKurban);
                                     })
                                     ->searchable()
                                     ->prefixIcon('heroicon-o-user-group')
                                     ->columnSpanFull(),
                             ])
-                            ->visible(fn (): bool => $this->activeContactType !== null),
+                            ->visible(fn (): bool => $this->activeContactCategoryId !== null),
                     ]),
             ])
             ->columns(1);
