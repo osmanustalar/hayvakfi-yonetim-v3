@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Pages;
 
 use App\Models\Contact;
+use App\Models\Region;
 use App\Services\N8nService;
 use Filament\Actions\Action;
 use Filament\Forms\Components\CheckboxList;
@@ -36,6 +37,8 @@ class WhatsappMessage extends Page
 
     public array $categories = [];
 
+    public array $region_ids = [];
+
     public array $contact_ids = [];
 
     public string $message = '';
@@ -49,6 +52,7 @@ class WhatsappMessage extends Page
         $this->form->fill([
             'recipient_type' => 'all',
             'categories'     => [],
+            'region_ids'     => [],
             'contact_ids'    => [],
             'message'        => '',
             'image_urls'     => [],
@@ -62,6 +66,7 @@ class WhatsappMessage extends Page
         return $form
             ->schema([
                 Section::make('Alıcılar')
+                    ->description('Sadece WhatsApp bildirimi aktif olan kişilere gönderim yapılır.')
                     ->schema([
                         Radio::make('recipient_type')
                             ->label('Kime Gönderilecek?')
@@ -73,6 +78,22 @@ class WhatsappMessage extends Page
                             ->default('all')
                             ->live()
                             ->afterStateUpdated(fn () => $this->updateRecipientCount()),
+
+                        Select::make('region_ids')
+                            ->label('Bölge Filtresi')
+                            ->multiple()
+                            ->searchable()
+                            ->placeholder('Tüm bölgeler')
+                            ->options(fn (): array => Region::query()
+                                ->where('is_active', true)
+                                ->orderBy('sort_order')
+                                ->get()
+                                ->mapWithKeys(fn (Region $r): array => [$r->id => $r->name])
+                                ->toArray()
+                            )
+                            ->live()
+                            ->afterStateUpdated(fn () => $this->updateRecipientCount())
+                            ->helperText('Boş bırakılırsa tüm bölgelere gönderilir.'),
 
                         CheckboxList::make('categories')
                             ->label('Kategoriler')
@@ -91,6 +112,7 @@ class WhatsappMessage extends Page
                             ->multiple()
                             ->searchable()
                             ->options(fn (): array => Contact::query()
+                                ->where('whatsapp_enabled', true)
                                 ->whereNotNull('phone')
                                 ->orderBy('first_name')
                                 ->get()
@@ -153,6 +175,7 @@ class WhatsappMessage extends Page
 
         $this->recipient_type = $data['recipient_type'];
         $this->categories     = $data['categories'] ?? [];
+        $this->region_ids     = $data['region_ids'] ?? [];
         $this->contact_ids    = $data['contact_ids'] ?? [];
         $this->message        = $data['message'] ?? '';
 
@@ -222,6 +245,7 @@ class WhatsappMessage extends Page
         $this->form->fill([
             'recipient_type' => $this->recipient_type,
             'categories'     => $this->categories,
+            'region_ids'     => $this->region_ids,
             'contact_ids'    => $this->contact_ids,
             'message'        => $this->message,
             'image_urls'     => $imagePaths,
@@ -230,7 +254,13 @@ class WhatsappMessage extends Page
 
     protected function buildQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        $query = Contact::query()->whereNotNull('phone');
+        $query = Contact::query()
+            ->where('whatsapp_enabled', true)
+            ->whereNotNull('phone');
+
+        if (!empty($this->region_ids)) {
+            $query->whereIn('region_id', $this->region_ids);
+        }
 
         match ($this->recipient_type) {
             'category' => $this->applyCategoryFilter($query),

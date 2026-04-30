@@ -119,6 +119,10 @@ class ContactResource extends Resource
                                     ->displayFormat('d.m.Y')
                                     ->nullable(),
 
+                                Toggle::make('whatsapp_enabled')
+                                    ->label('WhatsApp Bildirimi')
+                                    ->default(true),
+
                                 Select::make('region_id')
                                     ->label('Bölge')
                                     ->nullable()
@@ -194,6 +198,7 @@ class ContactResource extends Resource
                                 Toggle::make('is_student')
                                     ->label('Öğrenci')
                                     ->default(false),
+
                             ]),
                     ]),
             ]);
@@ -234,6 +239,11 @@ class ContactResource extends Resource
                 IconColumn::make('is_student')
                     ->label('Öğrenci')
                     ->boolean(),
+
+                IconColumn::make('whatsapp_enabled')
+                    ->label('WhatsApp')
+                    ->boolean()
+                    ->toggleable(),
 
                 TextColumn::make('created_at')
                     ->label('Oluşturulma')
@@ -280,6 +290,10 @@ class ContactResource extends Resource
                                 ->havingRaw('COUNT(*) > 1');
                         })
                     ),
+
+                Filter::make('whatsapp_enabled')
+                    ->label('WhatsApp Aktif')
+                    ->query(fn (Builder $query): Builder => $query->where('whatsapp_enabled', true)),
             ])
             ->actions([
                 Action::make('addToKurbanList')

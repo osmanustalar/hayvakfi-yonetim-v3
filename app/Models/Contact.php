@@ -26,6 +26,7 @@ class Contact extends Model
         'is_donor',
         'is_aid_recipient',
         'is_student',
+        'whatsapp_enabled',
         'notes',
         'created_user_id',
     ];
@@ -36,6 +37,7 @@ class Contact extends Model
             'is_donor' => 'boolean',
             'is_aid_recipient' => 'boolean',
             'is_student' => 'boolean',
+            'whatsapp_enabled' => 'boolean',
             'birth_date' => 'date',
         ];
     }
