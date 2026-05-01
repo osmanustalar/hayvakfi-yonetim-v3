@@ -68,10 +68,19 @@ class ContactCategoryResource extends Resource
 
                                 Select::make('contact_type')
                                     ->label('Sistem Türü')
-                                    ->options(collect(ContactType::cases())
-                                        ->mapWithKeys(fn (ContactType $t) => [$t->value => $t->label()])
-                                        ->toArray()
-                                    )
+                                    ->options(function (?ContactCategory $record): array {
+                                        $usedTypes = ContactCategory::query()
+                                            ->whereNotNull('contact_type')
+                                            ->when($record?->id, fn ($q) => $q->where('id', '!=', $record->id))
+                                            ->pluck('contact_type')
+                                            ->map(fn ($v) => $v instanceof ContactType ? $v->value : $v)
+                                            ->toArray();
+
+                                        return collect(ContactType::cases())
+                                            ->reject(fn (ContactType $t) => in_array($t->value, $usedTypes, true))
+                                            ->mapWithKeys(fn (ContactType $t) => [$t->value => $t->label()])
+                                            ->toArray();
+                                    })
                                     ->nullable()
                                     ->placeholder('Genel kategori')
                                     ->helperText('Sistem davranışı tetiklemesi için seçin. Her türden yalnızca bir kategori olabilir.'),
