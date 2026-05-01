@@ -24,6 +24,9 @@ class Contact extends Model
         'birth_date',
         'address',
         'region_id',
+        'is_donor',
+        'is_aid_recipient',
+        'is_student',
         'whatsapp_enabled',
         'notes',
         'created_user_id',
@@ -32,6 +35,9 @@ class Contact extends Model
     protected function casts(): array
     {
         return [
+            'is_donor' => 'boolean',
+            'is_aid_recipient' => 'boolean',
+            'is_student' => 'boolean',
             'whatsapp_enabled' => 'boolean',
             'birth_date' => 'date',
         ];
