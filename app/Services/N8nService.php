@@ -38,5 +38,22 @@ class N8nService extends ApiClient
         ]);
     }
 
-    
+    public function sendWhatsappBulkMessage(array $phones, string $message, ?array $imageUrls = null): void
+    {
+        $this->sendRest($this->apiName, 'POST', $this->apiUrl . '/ad24c477-77be-44cb-a073-a1db18691985', [
+            'headers' => [
+                'Content-Type' => 'application/json',
+                'X-API-KEY' => $this->apiKey,
+                'accept-encoding' => 'gzip, deflate, br'
+            ],
+            'json' => [
+                'phones' => $phones,
+                'message' => $message,
+                'event' => 'message',
+                'imageUrls' => $imageUrls
+            ]
+        ]);
+    }
+
+
 } 

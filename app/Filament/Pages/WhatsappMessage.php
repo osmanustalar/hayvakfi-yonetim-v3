@@ -133,8 +133,7 @@ class WhatsappMessage extends Page
                     ->schema([
                         Textarea::make('message')
                             ->label('Mesaj İçeriği')
-                            ->placeholder("Merhaba {Ad} {Soyad}, ...")
-                            ->helperText('Kullanılabilir değişkenler: {Ad} · {Soyad} · {AdSoyad} · {Telefon}')
+                            ->placeholder("Merhaba...")
                             ->rows(6)
                             ->required(),
 
@@ -210,35 +209,28 @@ class WhatsappMessage extends Page
             return;
         }
 
+        $phones = $contacts->pluck('phone')->values()->all();
         $service = app(N8nService::class);
-        $success = 0;
-        $failed  = 0;
 
-        foreach ($contacts as $contact) {
-            $personalized = $this->personalizeMessage($this->message, $contact);
+        try {
+            $service->sendWhatsappBulkMessage(
+                $phones,
+                $this->message,
+                empty($this->image_urls) ? null : $this->image_urls
+            );
 
-            try {
-                $service->sendWhatsappTextMessage(
-                    $contact->phone,
-                    $personalized,
-                    empty($this->image_urls) ? null : $this->image_urls
-                );
-                $success++;
-            } catch (\Throwable) {
-                $failed++;
-            }
+            Notification::make()
+                ->success()
+                ->title('Mesaj gönderimi tamamlandı')
+                ->body(count($phones) . ' kişiye gönderim tamamlandı')
+                ->send();
+        } catch (\Throwable $e) {
+            Notification::make()
+                ->danger()
+                ->title('Mesaj gönderilemedi')
+                ->body('Bir hata oluştu: ' . $e->getMessage())
+                ->send();
         }
-
-        $body = "Başarılı: {$success}";
-        if ($failed > 0) {
-            $body .= " · Başarısız: {$failed}";
-        }
-
-        Notification::make()
-            ->success()
-            ->title('Mesaj gönderimi tamamlandı')
-            ->body($body)
-            ->send();
 
         $this->restoreForm($imagePaths);
     }
@@ -283,14 +275,5 @@ class WhatsappMessage extends Page
         $query->whereHas('categories', function ($q): void {
             $q->whereIn('contact_categories.id', $this->categories);
         });
-    }
-
-    private function personalizeMessage(string $message, Contact $contact): string
-    {
-        return str_replace(
-            ['{Ad}', '{Soyad}', '{AdSoyad}', '{Telefon}'],
-            [$contact->first_name, $contact->last_name, "{$contact->first_name} {$contact->last_name}", $contact->phone ?? ''],
-            $message
-        );
     }
 }
