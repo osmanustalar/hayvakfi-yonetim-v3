@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Filament\Pages;
 
 use App\Models\Contact;
-use App\Models\Region;
 use App\Models\ContactCategory;
 use App\Models\Region;
 use App\Services\N8nService;
