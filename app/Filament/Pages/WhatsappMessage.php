@@ -46,6 +46,8 @@ class WhatsappMessage extends Page
 
     public array $image_urls = [];
 
+    public string $phone_region = '';
+
     public int $recipient_count = 0;
 
     public function getEmojiCategories(): array
@@ -71,6 +73,7 @@ class WhatsappMessage extends Page
             'categories'     => [],
             'region_ids'     => [],
             'contact_ids'    => [],
+            'phone_region'   => '',
             'message'        => '',
             'image_urls'     => [],
         ]);
@@ -111,6 +114,17 @@ class WhatsappMessage extends Page
                             ->live()
                             ->afterStateUpdated(fn () => $this->updateRecipientCount())
                             ->helperText('Boş bırakılırsa tüm bölgelere gönderilir.'),
+
+                        Select::make('phone_region')
+                            ->label('Numara Bölgesi')
+                            ->placeholder('Tümü (filtre yok)')
+                            ->options([
+                                'domestic'      => 'Yurtiçi (+90 / 05 ile başlayanlar)',
+                                'international' => 'Yurtdışı (+90 / 05 ile başlamayanlar)',
+                            ])
+                            ->live()
+                            ->afterStateUpdated(fn () => $this->updateRecipientCount())
+                            ->helperText('Seçilmezse tüm numaralara gönderilir.'),
 
                         CheckboxList::make('categories')
                             ->label('Kategoriler')
@@ -186,7 +200,7 @@ class WhatsappMessage extends Page
                 ->modalDescription(fn (): string => "{$this->recipient_count} kişiye WhatsApp mesajı gönderilecek. Onaylıyor musunuz?")
                 ->modalSubmitActionLabel('Evet, Gönder')
                 ->modalCancelActionLabel('İptal')
-                ->action('sendMessages'),
+                ->action(fn () => $this->sendMessages()),
         ];
     }
 
@@ -198,6 +212,7 @@ class WhatsappMessage extends Page
         $this->categories     = $data['categories'] ?? [];
         $this->region_ids     = $data['region_ids'] ?? [];
         $this->contact_ids    = $data['contact_ids'] ?? [];
+        $this->phone_region   = $data['phone_region'] ?? '';
         $this->message        = $data['message'] ?? '';
 
         $imagePaths = $data['image_urls'] ?? [];
@@ -261,6 +276,7 @@ class WhatsappMessage extends Page
             'categories'     => $this->categories,
             'region_ids'     => $this->region_ids,
             'contact_ids'    => $this->contact_ids,
+            'phone_region'   => $this->phone_region,
             'message'        => $this->message,
             'image_urls'     => $imagePaths,
         ]);
@@ -274,6 +290,18 @@ class WhatsappMessage extends Page
 
         if (!empty($this->region_ids)) {
             $query->whereIn('region_id', $this->region_ids);
+        }
+
+        if ($this->phone_region === 'domestic') {
+            $query->where(function ($q): void {
+                $q->where('phone', 'like', '+90%')
+                  ->orWhere('phone', 'like', '05%');
+            });
+        } elseif ($this->phone_region === 'international') {
+            $query->where(function ($q): void {
+                $q->where('phone', 'not like', '+90%')
+                  ->where('phone', 'not like', '05%');
+            });
         }
 
         match ($this->recipient_type) {
