@@ -29,8 +29,8 @@ class ContactsImport implements ToCollection, WithStartRow, SkipsEmptyRows
     {
         foreach ($rows as $row) {
             $id        = $this->val($row, 0);
-            $firstName = trim($this->val($row, 1) ?? '');
-            $lastName  = trim($this->val($row, 2) ?? '');
+            $firstName = trim((string) ($this->val($row, 1) ?? ''));
+            $lastName  = trim((string) ($this->val($row, 2) ?? ''));
 
             if ($firstName === '') {
                 $this->skippedCount++;
