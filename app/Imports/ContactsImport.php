@@ -70,6 +70,25 @@ class ContactsImport implements ToCollection, WithStartRow, SkipsEmptyRows
                 }
             }
 
+            // Aynı first_name, last_name, phone kombinasyonu varsa atla
+            $exists = Contact::where('first_name', $firstName)
+                ->when(
+                    $lastName === '',
+                    fn ($q) => $q->whereNull('last_name'),
+                    fn ($q) => $q->where('last_name', $lastName)
+                )
+                ->when(
+                    $phone === null,
+                    fn ($q) => $q->whereNull('phone'),
+                    fn ($q) => $q->where('phone', $phone)
+                )
+                ->exists();
+
+            if ($exists) {
+                $this->skippedCount++;
+                continue;
+            }
+
             $contact = Contact::create(array_merge($data, [
                 'created_user_id' => auth()->id(),
             ]));
@@ -96,6 +115,21 @@ class ContactsImport implements ToCollection, WithStartRow, SkipsEmptyRows
         if (str_contains($phone, '/')) {
             $phone = trim(explode('/', $phone)[0]);
         }
+
+        // Normalize phone number
+        // Remove spaces, dashes, parentheses
+        $phone = preg_replace('/[\s\-\(\)]+/', '', $phone);
+
+        // "90" ile başlıyorsa başına "+" ekle
+        if (str_starts_with($phone, '90') && !str_starts_with($phone, '+')) {
+            $phone = '+' . $phone;
+        }
+        // "0" ile başlıyorsa "0" yi "+90" ile değiştir
+        elseif (str_starts_with($phone, '0') && !str_starts_with($phone, '+')) {
+            $phone = '+90' . substr($phone, 1);
+        }
+        // "+" ile zaten başlıyorsa dokunma (already normalized)
+
         return $phone ?: null;
     }
 

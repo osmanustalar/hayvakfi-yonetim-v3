@@ -88,7 +88,6 @@ class ContactResource extends Resource
 
                                 TextInput::make('last_name')
                                     ->label('Soyad')
-                                    ->required()
                                     ->maxLength(100)
                                     ->placeholder('Soyad'),
 
